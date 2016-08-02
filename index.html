@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./assembler.js"></script>
+<script src="./jquery-3.0.0.min.js"></script>
+  <script>
+    var assemble = function() {
+      var code = $('#codeIn')[0].value;
+      var assembled = assembler.assemble(code);
+      console.log(assembled);
+      $('#binOut')[0].value = assembled
+    }
+    var download = function() {
+      var blob = new Blob([$('#binOut')[0].value], {type: "text/plain;charset=utf-8"});
+      var fileName = $('#filename')[0].value;
+      if (fileName == "") {fileName = "ES575"};
+      saveAs(blob, fileName + ".mif");
+    }
+  </script>
+</head>
+<body>
+  <h1> IAS Simulator - vAlpha </h1>
+  <h2>Alpha release</h2>
+  <p>
+    <input type="button" value="Run" onclick="runAll()">
+    &nbsp;
+    <input type="button" value="Step" onclick="nextStep"> 
+    <input type="text" id="filename" placeholder="filename">.mif
+  </p>
+  <p>
+    <textarea id="codeIn" style="width: 49%; height: 40em"></textarea>
+    &nbsp;
+    <textarea id="textOutt" style="width: 49%; height: 40em"></textarea>
+  </p>
+</body>
