@@ -1,35 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<script src="./assembler.js"></script>
-<script src="./jquery-3.0.0.min.js"></script>
-  <script>
-    var assemble = function() {
-      var code = $('#codeIn')[0].value;
-      var assembled = assembler.assemble(code);
-      console.log(assembled);
-      $('#binOut')[0].value = assembled
-    }
-    var download = function() {
-      var blob = new Blob([$('#binOut')[0].value], {type: "text/plain;charset=utf-8"});
-      var fileName = $('#filename')[0].value;
-      if (fileName == "") {fileName = "ES575"};
-      saveAs(blob, fileName + ".mif");
-    }
-  </script>
+	<meta charset="utf-8">
+	
+	<script src="./jquery-3.0.0.min.js"></script>
+	<script src="./cpu.js"></script>
+	<script src="./runoptions.js"> </script>
+
+   <title> IAS Simulator </title>
+   
 </head>
+
 <body>
-  <h1> IAS Simulator - vAlpha </h1>
-  <h2>Alpha release</h2>
-  <p>
-    <input type="button" value="Run" onclick="runAll()">
-    &nbsp;
-    <input type="button" value="Step" onclick="nextStep"> 
-  </p>
-  <p>
-    <textarea id="codeIn" style="width: 49%; height: 40em"></textarea>
-    &nbsp;
-    <textarea id="textOut" style="width: 49%; height: 40em"></textarea>
-  </p>
+	<div id = "top">
+	  <h1> IAS Simulator - vAlpha </h1>
+	</div>
+	
+	<div id = "but-menu">
+	  <p>
+		<input id = "runbut" type="button" value="Run" onclick="runAll()">
+		<input id = "stepbut" type="button" value="Step" onclick="runStep()">
+		<input id = "resetbut" type="button" value="Reset" onclick="resetAll()">
+	  </p>
+	</div>
+	
+	<div  id = "main-page">
+		<div id = "code-part" style = "width: 30%; float: left">
+			<p align = 'center'> Memory </p>
+			<table align = 'center'>
+			   <tr>
+				<th>000</th>
+				<th>       <input type="text" id="m0" placeholder="empty" maxlength = 10> </th>
+			  </tr>
+			  <tr>
+				<th>001</th>
+				<th>       <input type="text" id="m1" placeholder="empty" maxlength = 10> </th>
+			  </tr>
+			  <tr>
+				<td>002</td>
+				<td>       <input type="text" id="m2" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>003</td>
+				<td>       <input type="text" id="m3" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>004</td>
+				<td>       <input type="text" id="m4" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>005</td>
+				<td>       <input type="text" id="m5" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>006</td>
+				<td>       <input type="text" id="m6" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>007</td>
+				<td>       <input type="text" id="m7" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>008</td>
+				<td>       <input type="text" id="m8" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>009</td>
+				<td>       <input type="text" id="m9" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>00A</td>
+				<td>       <input type="text" id="m10" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>00B</td>
+				<td>       <input type="text" id="m11" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			  <tr>
+				<td>00C</td>
+				<td>       <input type="text" id="m12" placeholder="empty" maxlength = 10> </td>
+			  </tr>
+			</table>
+			
+			<p align = 'center'>
+				<input id = "loadbut" type="button" value="Load to IAS Memory" onclick="loadMem()">
+			</p>
+		</div>
+		
+		<div id = "result" style = "width: 30%; float: left">
+			<br></br>
+			<br></br>
+			<br></br>
+			
+			<p> PC  => <input type = "text" id = "pcOutput" size = 5 disabled /> </p>
+			<p> AC  => <input type = "text" id = "acOutput" size = 5 disabled /> </p>
+			<p> MQ  => <input type = "text" id = "mqOutput" size = 5 disabled /> </p>
+			<p> OPERATION  => <input type = "text" id = "opOutput" disabled /> </p>
+			
+			<br></br>
+			
+			<p> LOG  => <input type = "text" id = "logOutput" disabled /> </p>
+			
+		</div>
+	</div>
 </body>
