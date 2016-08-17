@@ -34,7 +34,10 @@ var next = function(){
 		}
 		
 	} catch(exception){
-		alert("PROGRAM ABORTED");
+		alert("PROGRAM ABORTED" + "\n" +
+			  "exception name: " + exception.name + "\n" +
+			  "exception message: " + exception.message
+			 );
 		end = true;
 	}
 };

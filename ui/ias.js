@@ -1,34 +1,42 @@
 var IAS = (function () {
 
 	// default initialization code
-
-	var i, j, k, p, q, r, s; // various temps
-	
+	// constants
 	var RAM_SIZE = 1024; // words in memory
 	var POW_OF_2 = []; // unfortunately we can't rely on bitwise ops (they convert to 32 bit integer)
 	for (i = 0, p = 1; i <= 40; i++, p *= 2) {
 		POW_OF_2[i] = p;
 	}
 
-	
+	// registers and memory
 	var reg = {};
 	reg.ctrl = "left_fetch";
 	reg.ir = 0; // 8 bit
 	reg.pc = reg.mar = 0; // 12 bit
 	reg.ibr = 0; // 20 bit
-	reg.mbr reg.ac = reg.mq = 0; // 40 bit
+	reg.mbr = reg.ac = reg.mq = 0; // 40 bit
 
 	var ram = [];
 	for (i = 0; i < RAM_SIZE; i++) {
 		ram[i] = Math.floor(Math.random() * POW_OF_2[40]); // crazy RAM initialization
 	}
 
-	// return "bits" lsb to lsb+numbits-1 of value (convention: lsb 0)
+	// return value's "bits" from lsb to lsb+numbits-1 (convention: lsb 0)
 	// bits requested should be in range 0-39
 	var selectBits = function (value, lsb, numbits) { 
 		return Math.floor(value / POW_OF_2[lsb]) % POW_OF_2[numbits];
 	};
 
+	// left pads str with amt padchars
+	var leftPadWithChar = function (str, padchars, amt) {
+		var result = "";
+		for (var i = 0; i < amt; i++) {
+			result += padchars;
+		}
+		return result + str;
+	}
+
+	// validation functions that throw exceptions:
 	// makes sure that we are fetching an instruction from a valid address
 	var validateInstructionFetch = function () {
 		if (typeof ram[reg.pc] !== "number") { // if it's not a valid (initialized) position in RAM
@@ -41,6 +49,7 @@ var IAS = (function () {
 		validateDataRange(reg.pc);
 	};
 
+	// make sure we are accessing a valid address in RAM
 	var validateDataAccess = function (addr) {
 		if (typeof ram[addr] !== "number") { // if it's not a valid (initialized) position in RAM
 			throw {
@@ -52,6 +61,7 @@ var IAS = (function () {
 		validateDataRange(addr);
 	};
 
+	// make sure memory value is an integer in the appropriate range
 	var validateDataRange = function (addr) { // defensive debugging
 		if (ram[addr] < 0 || ram[addr] >= POW_OF_2[40] || ram[addr] !== Math.floor(ram[addr])) {
 			throw {
@@ -63,6 +73,7 @@ var IAS = (function () {
 		}
 	}
 
+	// make sure memory value is an integer in the appropriate range
 	var validateNumRange = function (num, range) { // defensive debugging
 		if (num < 0 || num >= range || num !== Math.floor(num)) {
 			throw {
@@ -73,6 +84,88 @@ var IAS = (function () {
 		}
 	}
 
+	// valid memory/register attributes for getRAM, setRAM, getCPU queries. case insensitive
+	var opcode_register_props = { // IR attributes
+		leftopcode: true,
+		leftopcodeHex: true,
+		leftopcodeText: true,
+		rightopcode: true,
+		rightopcodehex: true,
+		rightopcodetext: true,
+	};
+	var addr_register_props = { // MAR and PC attributes
+		leftaddr: true,
+		leftaddrhex: true,
+		rightaddr: true,
+		rightaddrhex: true
+	};
+	var fortybit_register_props = { // other registers and memory
+		leftopcode: true,
+		leftopcodehex: true,
+		leftopcodetext: true,
+		leftaddr: true,
+		leftaddrhex: true,
+		leftinstruction: true,
+		leftinstructionhex: true,
+		leftinstructiontext: true,
+		rightopcode: true,
+		rightopcodehex: true,
+		rightopcodetext: true,
+		rightaddr: true,
+		rightaddrhex: true,
+		rightinstruction: true,
+		rightinstructionhex: true,
+		rightinstructiontext: true,
+		number: true,
+		rawhexnumber: true
+	}
+	var registers_to_prop = {
+		ir: opcode_register_props,
+		mar: addr_register_props,
+		pc: addr_register_props,
+		ibr: fortybit_register_props,
+		mbr: fortybit_register_props,
+		ac: fortybit_register_props,
+		mq: fortybit_register_props
+	};
+
+	// returns an object with all possible attributes of a 40 bit word
+	var getWordAttributes = function (word, property) {
+
+		var blankinstruction = "                    "; // 20 spaces
+		var attributes = {};
+
+		attributes.leftopcode = selectBits(word, 32, 8);
+		attributes.leftopcodehex = attributes.leftopcode.toString(16).toUpperCase();
+		attributes.leftopcodetext = instructions[leftopcode] !== undefined ? instructions[leftopcode].name : blankinstruction;
+
+		attributes.rightopcode = selectBits(word, 12, 8);
+		attributes.rightopcodehex = attributes.rightopcode.toString(16).toUpperCase();
+		attributes.rightopcodetext = instructions[rightopcode] !== undefined ? instructions[rightopcode].name : blankinstruction;
+
+		attributes.leftaddr = selectBits(word, 20, 12);
+		attributes.leftaddrhex = attributes.leftAddr.toString(16).toUpperCase();
+
+		attributes.rightaddr = selectBits(word, 0, 12);
+		attributes.rightaddrhex = attributes.rightaddr.toString(16).toUpperCase();
+
+		attributes.leftinstruction = selectBits(word, 20, 20);
+		attributes.leftinstructionhex = attributes.leftInstruction.toString(16).toUpperCase();
+		attributes.leftinstructiontext = instructions[leftopcode] !== undefined ? instructions[leftopcode].name.replace('X', "0x" + attributes.leftaddrhex) : blankinstruction;
+
+		attributes.rightinstruction = selectBits(word, 0, 20);
+		attributes.rightinstructionhex = attributes.rightinstruction.toString(16).toUpperCase();
+		attributes.rightinstructiontext = instructions[rightopcode] !== undefined ? instructions[rightopcode].name.replace('X', "0x" + attributes.rightaddrhex) : blankinstruction;
+
+		attributes.number = word >= POW_OF_2[39] ? POW_OF_2[40] - word : word; // if word is negative, get the 2's complement
+		attributes.rawhexnumber = word.toString(16).toUpperCase();
+
+		return attributes;
+	};
+
+
+
+	// all known IAS instructions:
 	var instructions = []
 	instructions[1] = {
 		name: "LOAD M(X)",
@@ -222,7 +315,7 @@ var IAS = (function () {
 				sign *= -1;
 				tmp = POW_OF_2[40] - tmp; // negate it
 			}
-			reg.mq = Math.floor(reg.ac / tmp)); // MQ takes the quotient
+			reg.mq = Math.floor(reg.ac / tmp); // MQ takes the quotient
 			if (sign === -1) {
 				reg.mq = POW_OF_2[40] - reg.mq; // quotient is negative
 			}
@@ -306,84 +399,8 @@ var IAS = (function () {
 		}
 	};
 
-	var opcode_register_props = {
-		leftOpcode: 1,
-		leftOpcodeHex: 1,
-		leftOpcodeText: 1,
-		rightOpcode: 1,
-		rightOpcodeHex: 1,
-		rightOpcodeText: 1,
-	};
-	var addr_register_props = {
-		leftAddr: 1,
-		leftAddrHex: 1,
-		rightAddr: 1,
-		rightAddrHex: 1
-	};
-	var fortybit_register_props = {
-		leftOpcode: 1,
-		leftOpcodeHex: 1,
-		leftOpcodeText: 1,
-		leftAddr: 1,
-		leftAddrHex: 1,
-		leftInstruction: 1,
-		leftInstructionHex: 1,
-		leftInstructionText: 1,
-		rightOpcode: 1,
-		rightOpcodeHex: 1,
-		rightOpcodeText: 1,
-		rightAddr: 1,
-		rightAddrHex: 1,
-		rightInstruction: 1,
-		rightInstructionHex: 1,
-		rightInstructionText: 1,
-		number: 1,
-		rawHexNumber: 1
-	}
-	var registers_to_prop = {
-		ir: opcode_register_props,
-		mar: addr_register_props,
-		pc: addr_register_props,
-		ibr: fortybit_register_props,
-		mbr: fortybit_register_props,
-		ac: fortybit_register_props,
-		mq: fortybit_register_props
-	};
 
-	// TO DO
-	var getWordAttribute = function (word, property) {
-
-		var blankinstruction = "                    "; // 20 spaces
-		var attributes = {};
-
-		attributes.leftOpcode = selectBits(word, 32, 8);
-		attributes.leftOpcodeHex = attributes.leftOpcode.toString(16).toUpperCase();
-		attributes.leftOpcodeText = instructions[leftOpcode] !== undefined ? instructions[leftOpcode].name : blankinstruction;
-
-		attributes.rightOpcode = selectBits(word, 12, 8);
-		attributes.rightOpcodeHex = attributes.rightOpcode.toString(16).toUpperCase();
-		attributes.rightOpcodeText = instructions[rightOpcode] !== undefined ? instructions[rightOpcode].name : blankinstruction;
-
-		attributes.leftAddr = selectBits(word, 20, 12);
-		attributes.leftAddrHex = attributes.leftAddr.toString(16).toUpperCase();
-
-		attributes.rightAddr = selectBits(word, 0, 12);
-		attributes.rightAddrHex = attributes.rightAddr.toString(16).toUpperCase();
-
-		attributes.leftInstruction = selectBits(word, 20, 20);
-		attributes.leftInstructionHex = attributes.leftInstruction.toString(16).toUpperCase();
-		attributes.leftInstructionText = instructions[leftOpcode] !== undefined ? instructions[leftOpcode].name.replace('X', "0x" + attributes.leftAddrHex) : blankinstruction;
-
-		attributes.rightInstruction = selectBits(word, 0, 20);
-		attributes.rightInstructionHex = attributes.rightInstruction.toString(16).toUpperCase();
-		attributes.rightInstructionText = instructions[rightOpcode] !== undefined ? instructions[rightOpcode].name.replace('X', "0x" + attributes.rightAddrHex) : blankinstruction;
-
-		attributes.number = word;
-		attributes.rawHexNumber = attributes.number.toString(16).toUpperCase();
-
-		return attributes[property];
-	};
-
+	// IAS public methods:
 	return {
 
 		reset: function () {
@@ -442,6 +459,7 @@ var IAS = (function () {
 					} else { // we executed an instruction at the right
 						reg.ctrl = "left_fetch";
 					}
+				}
 				// else if it is a jump instruction, then we take care of it at the specific instruction's code
 				
 			} else { // non existent opcode
@@ -449,7 +467,7 @@ var IAS = (function () {
 					name: "invalidInstruction",
 					message: "Attempt to execute a non-existent instruction with opcode\n" +
 						     reg.ir + " at address \n0x" + 
-						     (reg.ctrl === "left_execute" ? reg.pc : reg.pc-1).toString(16).toUpperCase();
+						     (reg.ctrl === "left_execute" ? reg.pc : reg.pc-1).toString(16).toUpperCase()
 				}; // note: IAS handout says we should increment PC only in the right fetch cycle - hence the check above
 			}
 
@@ -457,29 +475,26 @@ var IAS = (function () {
 
 		getRAM: function (addr, prop) {
 			validateDataAccess(addr);
-			var mem = ram[addr];
-			if (fortybit_register_props[prop] === undefined) { // if prop is not a valid property for a 40 bit word
+			var attributes = getWordAttribute(ram[addr]);
+			prop = prop.toLowerCase();
+			if (attributes[prop] === undefined) { // if prop is not a valid property for a 40 bit word
 				throw {
 					name: "invalidMemoryAttribute",
 					message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
 				};
 			}
-			prop = prop.toLowerCase();
-
-			return getWordAttribute(mem, prop);
+			return attributes[prop];
 		},
 
 
 		getCPU: function (register, prop) {
 			register = register.toLowerCase();
+			prop = prop.toLowerCase();
 			if (reg[register] === undefined) { // if there is no such register
 				throw {
 					name: "invalidRegister",
 					message: "Specified register " + register + " is not part of the IAS architecture"
 				};
-			}
-			if (register === "ctrl") {
-				return reg.ctrl;
 			}
 			if (registers_to_prop[register][prop] === undefined) { // if prop is not a valid property for the selected register
 				throw {
@@ -487,7 +502,6 @@ var IAS = (function () {
 					message: "The specified attribute " + prop + " is not valid for the register " + register
 				};
 			}
-			prop = prop.toLowerCase();
 			var word = reg[register];
 			if (register === "ibr" || register === "pc" || register === "mar") { // IBR is duplicated (left and right instructions are one and the same). for the address registers, duplication works as well
 				word = word + POW_OF_2[20]*word;
@@ -495,72 +509,129 @@ var IAS = (function () {
 				word *= POW_OF_2[12]; // shift
 				word = word + POW_OF_2[20]*word;
 			}
-
-			return getWordAttribute(word, prop);
+			if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
+				return reg.ctrl;
+			}
+			return getWordAttributes(word)[prop]; // return the desired property
 		},
 
 
-		// TO DO. THIS FUNCTION IS ABSOLUTE GARBAGE
 		setRAM: function (addr, prop, value) {
-			validateDataAccess(addr);
-			
-			if (fortybit_register_props[prop] === undefined) { // if prop is not a valid property for a 40 bit word
+
+			prop = prop.toLowerCase();
+			if (fortybit_register_props[prop] === undefined) { // if the property doesn't exist
 				throw {
 					name: "invalidMemoryAttribute",
 					message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
 				};
 			}
-			prop = prop.toLowerCase();
-
 			if (prop.indexOf("text") !== -1) { // if this is one of the 'Text' properties
 				throw {
 					name: "memoryAttributeNotSupported",
 					message: "The specified attribute " + prop + " is not currently supported for memory write operations"
 				};
 			}
-			var num;
-			if (prop.indexOf("hex") !== -1) { // if value is actually hex string
-				var re = /^[\s]*(?:0x)?0*([0-9a-f]+)[\s]*$/i; // match a hexadecimal integer
-				var m = re.exec(value);
-				if (m === null) { // if no match
-					throw {
-						name: "invalidValueArgument",
-						message: "expected a hexadecimal number as argument:\n" + value
-					};
-				}
-				num = parseInt(m[1], 10); // convert our matched hex string
-			} else { // just a regular number
-				if (typeof value !== 'number') {
-					throw {
-						"invalidValueArgument",
-						message: "expected a number as argument"
-					};
-				}
-				if (num < 0) { // if num is negative, create the 2's compl representation
-					num = POW_OF_2[40] + num;
-				}
+
+			validateDataAccess(addr);
+			var word = ram[addr];
+			var lsb = 0, numbits = 40;
+
+			if (prop.indexOf("opcode") !== -1) { // if it's an opcode attribute
+				lsb += 12; // position to read opcode field
+				numbits = 8; // 8 bit address field
 			}
-			//validateNumRange(num, POW_OF_2[40]); // num must be in range [0, 2^40)
-			
-			
+			if (prop.indexOf("left") !== -1) { // if it's a left attribute
+				lsb += 20; // position to read left field
+			}
+			if (prop.indexOf("addr") !== -1) { // if it's an address attribute
+				numbits += 12; // 12 bit address field
+			}
+			if (prop.indexOf("instruction") !== -1) { // if it's an instruction attribute
+				numbits = 20; // 20 bit instruction field
+			}
+			var field = selectBits(word, lsb, numbits);
+
+			if (prop.indexOf("hex") !== -1) { // if we were passed a hex string
+				value = parseInt(value, 16);
+			}
+			if (value < 0) {
+				value = POW_OF_2[40] - value; // 2's complement it
+			}
+			validateNumRange(value, POW_OF_2[numbits]);
+
+			word = word - field + POW_OF_2[lsb] * value; // replace field with the new value
+			ram[addr] = word; // write the replaced value to memory	
 
 		},
 
-		// TO DO
+		// dumps CPU information
 		dumpCPU: function () {
-
-
+			var attributesIR = getWordAttributes(reg.ir * POW_OF_2[12]); // put IR's "opcode field" in place so we can read it
+			var attributesMAR = getWordAttributes(reg.mar);
+			var attributesPC = getWordAttributes(reg.pc);
+			var attributesIBR = getWordAttributes(reg.ibr);
+			var attributesMBR = getWordAttributes(reg.mbr);
+			var attributesAC = getWordAttributes(reg.ac);
+			var attributesMQ = getWordAttributes(reg.mq);
+			return "IAS" +
+				   "CTRL: " + reg.ctrl + "\n" +
+				   "IR: " + "0x" + attributesIR.rightopcodehex + "\t" + attributesIR.rightopcode + "\t" + attributesIR.rightopcodetext + "\n" +
+				   "MAR: " + "0x" + attributesMAR.rightaddrhex + "\t" + attributesMAR.rightaddr + "\n" +
+				   "PC: " + "0x" + attributesPC.rightaddrhex + "\t" + attributesPC.rightaddr + "\n" +
+				   "IBR: " + "0x" + attributesIBR.rightopcodehex + " " + attributesIR.rightaddrhex + "\t" + attributesIR.rightinstructiontext + "\n" +
+				   "MBR: " + "0x" + attributesMBR.leftopcodehex + " " + attributesMBR.leftaddrhex + " " + attributesMBR.leftinstructiontext + "\t" + attributesMBR.rightopcodehex + " " + attributesMBR.rightaddrhex + " " + attributesMBR.rightinstructiontext + "\n" +
+				   "AC: " + "0x" + attributesAC.rawhexnumber + "\t" + attributesAC.number + "\n" +
+				   "MQ: " + "0x" + attributesMQ.rawhexnumber + "\t" + attributesMQ.number + "\n";
+				   
 		},
 
+		// returns a memory map (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
 		dumpRAM: function () {
+			var map = ""; // is there a more efficient way to do it JS than by string concatenation?
+			var ADDRDIGITS = 3; // our address field is 3 digits wide
+		
+			for (var i = 0; i < RAM_SIZE; i++) {
+				var addr = i.toString(16);
+				var line = leftPadWithChar(addr, "0", (ADDRDIGITS - addr.length)); // left pad the address field with zeroes
+				line += "\t";
+				var word = ram[i];
+				var f1 = selectBits(word, 32, 8).toString(16);
+				var f2 = selectBits(word, 20, 12).toString(16);
+				var f3 = selectBits(word, 12, 8).toString(16);
+				var f4 = selectBits(word, 0, 12).toString(16);
 
+				line += leftPadWithChar(f1, "0", 2-f1.length) + " "; // opcode field: 2 digits wide
+				line += leftPadWithChar(f2, "0", 3-f2.length) + " "; // address field: 3 digits wide
+				line += leftPadWithChar(f3, "0", 2-f3.length) + " ";
+				line += leftPadWithChar(f4, "0", 3-f4.length) + "\n";
 
+				map += line.toUpperCase();
+			}
+			return map;
 		},
 
-		// TO DO
+		// uses a memory map to insert values into RAM
+		// (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
 		loadRAM: function (map) {
-			
-
+			var lines = map.split("\n"); // process each line corresponding to a word in memory
+			var re = /^[\s]*([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*)$/i; // match a line: an address followed by hex numbers. whitespace only mandatory for separating the address and the memory value
+			var whitespace = /[\s]/g;
+			for (var i = 0; i < lines.length; i++) {
+				var m = lines[i].match(re); // capture 1: addr. capture 2: number (with possible whitespace interspersed)
+				if (m === null) { // if the line does match our pattern
+					throw {
+						name: "invalidMap",
+						message: "Line " + (i+1) + " of the memory map is not in the valid format:\n" +
+						         "<address> <number> [#comment]" + "\n" +
+						         ", where <number> may have any amount of whitespaces, and comments are optional"
+					};
+				}
+				var addr = parseInt(m[1], 16);
+				var number = parseInt(m[2].replace(whitespace, ""), 16); // skip whitespace
+				validateDataAccess(addr); // make sure address and number matched are in valid range
+				validateNumRange(number, POW_OF_2[40]);
+				ram[addr] = number;
+			}
 		}
 
 
