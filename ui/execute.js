@@ -7,11 +7,10 @@ var runNext = function(){
 	$("#nextbut").prop("disabled", end);
 	$("#resetbut").prop("disabled", false);
 	updateAll();
-	if(end){ window.clearInterval(allRun); }
 };
 
 //Run next step
-var runStep= function(){
+var runStep = function(){
 	runNext();
 	runNext();
 	$("#stepbut").prop("disabled", end);
@@ -20,7 +19,7 @@ var runStep= function(){
 
 //Run all code
 var runAll = function(){
-	allRun = window.setInterval(runStep, execspeed);
+	allRun = window.setInterval(runNext, execspeed);
 };
 
 //Call cpu methods
@@ -41,7 +40,6 @@ var next = function(){
 			  "exception name: " + exception.name + "\n" +
 			  "exception message: " + exception.message
 			 );
-		//alert("PROGRAM ABORTED\n" + exception);
 		window.clearInterval(allRun);
 		return;
 	}
@@ -54,6 +52,7 @@ var resetAll = function(){
 	updateImage("reset");
 	IAS.reset();
 	end = false;
+	ftc = true;
 };
 
 //Set run all speed

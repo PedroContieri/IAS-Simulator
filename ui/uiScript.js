@@ -15,18 +15,23 @@ var loadMem = function(){
     	}
    	}
    	wdtspace = wdtspace.toUpperCase();
+	
    	
 	//adicionando a memoria
 	var map ="", j=0;
 	for(var i = 0; i < wdtspace.length; i++){
-		if(j === 3 || j === 5 || j === 7 || j === 9 || j === 11)
-			map += " ";
-		map += wdtspace.charAt(i);
-		j++;
-		if(j>13)
-			j=0;		
+		if(wdtspace.charAt(i) != '\n'){
+			if(j === 3 || j === 5 || j === 7 || j === 9 || j === 11)
+				map += " ";
+			map += wdtspace.charAt(i);
+			j++;
+			if(j>12){
+				j=0;
+				map += '\n';
+			}
+		}
 	}
-	console.log(String(map));
+	
 	IAS.loadRAM(map);
 	updateMem();
 };
@@ -58,33 +63,33 @@ var updateImage = function(phase){
 			
 		case "reset":
 			document.getElementById("pc_box").style.fill = "#ffffff";
-			document.getElementById("pc_mar").style.stroke = "#ffffff";
+			document.getElementById("pc_mar").style.stroke = "#000000";
 			document.getElementById("mar_box").style.fill = "#ffffff";
 			document.getElementById("main_box").style.fill = "#ffffff";
-			document.getElementById("mar_main").style.stroke = "#ffffff";
-			document.getElementById("main_mbr").style.stroke = "#ffffff";
+			document.getElementById("mar_main").style.stroke = "#000000";
+			document.getElementById("main_mbr").style.stroke = "#000000";
 			document.getElementById("mbr_box").style.fill = "#ffffff";
 			document.getElementById("ir_box").style.fill = "#ffffff";
 			document.getElementById("ibr_box").style.fill = "#ffffff";
-			document.getElementById("mbr_ir").style.stroke = "#ffffff";
-			document.getElementById("mbr_ibr").style.stroke = "#ffffff";
+			document.getElementById("mbr_ir").style.stroke = "#000000";
+			document.getElementById("mbr_ibr").style.stroke = "#000000";
 			document.getElementById("control_box").style.fill = "#ffffff";
 			document.getElementById("ibr_box").style.fill = "#ffffff";
 			document.getElementById("ir_box").style.fill = "#ffffff";
-			document.getElementById("ibr_ir").style.stroke = "#ffffff";
-			document.getElementById("ir_control").style.stroke = "#ffffff";
+			document.getElementById("ibr_ir").style.stroke = "#000000";
+			document.getElementById("ir_control").style.stroke ="#000000";
 			document.getElementById("ac_box").style.fill = "#ffffff";
 			document.getElementById("ula_box").style.fill = "#ffffff";
-			document.getElementById("ac_ula").style.stroke = "#ffffff";
-			document.getElementById("ula_ac").style.stroke = "#ffffff";
+			document.getElementById("ac_ula").style.stroke = "#000000";
+			document.getElementById("ula_ac").style.stroke = "#000000";
 			document.getElementById("mq_box").style.fill = "#ffffff";
-			document.getElementById("mq_ac").style.stroke = "#ffffff";
-			document.getElementById("ula_mq").style.stroke = "#ffffff";
-			document.getElementById("mq_ula").style.stroke = "#ffffff";
-			document.getElementById("mbr_main").style.stroke = "#ffffff";
-			document.getElementById("mbr_ula").style.stroke = "#ffffff";
-			document.getElementById("ula_mbr").style.stroke = "#ffffff";
-			document.getElementById("mar_pc").style.stroke = "#ffffff";
+			document.getElementById("mq_ac").style.stroke = "#000000";
+			document.getElementById("ula_mq").style.stroke = "#000000";
+			document.getElementById("mq_ula").style.stroke = "#000000";
+			document.getElementById("mbr_main").style.stroke = "#000000";
+			document.getElementById("mbr_ula").style.stroke = "#000000";
+			document.getElementById("ula_mbr").style.stroke = "#000000";
+			document.getElementById("mar_pc").style.stroke = "#000000";
 			break;
 		
 		case "exec_addsubshift":
@@ -200,12 +205,13 @@ var updateAll = function(){
 	
 	opcd = IAS.getCPU("ir", "leftOpcode");
 	
-	if(ftc){
+	if(!ftc){
 		document.getElementById("op_out").value = "FETCH";
 		operationstr = "ftch";
 	}
 	else{
 		document.getElementById("op_out").value = IAS.getCPU("ir", "leftOpcodeText").toUpperCase();
+		
 		if(opcd = 10){
 			operationstr = "exec_loadmq";
 		} else if(opcd == 9){
