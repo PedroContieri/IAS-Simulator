@@ -42,13 +42,19 @@
 			
 			<div class="col_6" style="margin-top: 20px;">
 				<button class="medium" id="resetbut" onclick="resetAll()"><i class="icon-undo"></i> Reset </button>
+				
+				<label for="textset" style="margin-left: 20%"> RunUpdate [ms]</label>
+				<input onkeypress="return validateNumber(event);" name="textset" id = "speedset" placeholder="1000" type="text" size = "5">
+				<button type="button" class="small blue" onclick="setSpeed()">Set</button>
 			</div>
+			
 		</div>
+	
 		
 		<!-- Textbox Area -->
 		<div class="col_6" align="center" style="margin-top: 20px">
 			
-			<textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 820px" ></textarea>
+			<textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 960px" ></textarea>
 			<br/><br/>
 			<button class= "medium" onclick="loadMem()"><i class="icon-save"></i> Send to IAS Memory </button>
 			<br/><br/>
@@ -130,49 +136,61 @@
 				</table>
 			</div>
 			
-		</div>
-		</br>
-		<div class="col_6" align="center">
-				
-			<div class="col_5" align="center">
-			<br/>
-			<p><b>MAIN MEMORY</b></p>
-			<textarea id="mainMemory" placeholder="EMPTY" style="width:80%%; height: 300px" disabled></textarea>
-			</div>
-			
-			<div class="col_5" align="right" style="margin-left: 5%; margin-top: 7%">
-				<table cellspacing="0" cellpadding="0">
+			<div class="col_6" align="center">
+				<table cellspacing="0" cellpadding="0" align="center">
 					<thead><tr>
 						<th>REGISTER</th>
 						<th>VALUE</th>
 					</tr></thead>
 					<tbody><tr>
 						<td>PC</td>
-						<td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
+						<td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
 					</tr><tr>
 						<td>AC</td>
-						<td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
+						<td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
 					</tr><tr>
 						<td>MQ</td>
-						<td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
-					</tr><tr>
-						<td></td>
-						<td></td>
-					</tr><tr>
-						<td>MBR</td>
-						<td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
-					</tr><tr>
-						<td>IR</td>
-						<td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
-					</tr><tr>
-						<td>IBR</td>
-						<td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>
-					</tr><tr>
-						<td>MAR</td>
-						<td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 10/></td>				
-				
+						<td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr>
 					</table>
 			</div>
+			
+			<div class="col_5" align="center">
+				<table cellspacing="0" cellpadding="0" align="center">
+					<thead><tr>
+						<th>REGISTER</th>
+						<th>VALUE</th>
+					</tr></thead>
+					<tbody><tr>
+						<td>MBR</td>
+						<td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>IR</td>
+						<td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>IBR</td>
+						<td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>MAR</td>
+						<td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>				
+					</tr>
+				</table>
+			</div>
+			
+		</div>
+		</br>
+		<div class="col_6" align="center">
+			
+			<p><b>MAIN MEMORY</b></p>
+			
+			<div class="col_6" align="center" >
+				<textarea id="mainMemory1" placeholder="EMPTY" style="width:83%; height: 300px" disabled></textarea>
+			</div>
+			
+			<div class="col_6" align="center">
+				<textarea id="mainMemory2" placeholder="EMPTY" style="width:83%; height: 300px" disabled></textarea>
+			</div>
+
 		</div>
 		
 	</div>

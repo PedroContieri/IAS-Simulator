@@ -31,10 +31,13 @@ var loadMem = function(){
 	updateMem();
 };
 
+//Load text to mem
 var updateMem = function(){
-	document.getElementById("mainMemory").value = IAS.dumpRAM();
+	document.getElementById("mainMemory1").value = IAS.dumpRAM();
+	document.getElementById("mainMemory2").value = IAS.dumpRAM();
 };
 
+//Update IAS image
 var updateImage = function(phase){
 		
 	switch (phase){
@@ -183,6 +186,7 @@ var updateImage = function(phase){
 	}
 };
 
+//Update all interface
 var updateAll = function(){
 	var operationstr = "";
 	
