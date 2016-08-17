@@ -212,7 +212,9 @@ var updateAll = function(){
 	else{
 		document.getElementById("op_out").value = IAS.getCPU("ir", "leftOpcodeText").toUpperCase();
 		
-		if(opcd = 10){
+		console.log("OPCODE " + opcd);
+		
+		if(opcd == 10){
 			operationstr = "exec_loadmq";
 		} else if(opcd == 9){
 			operationstr = "exec_loadmqm";

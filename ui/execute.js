@@ -64,6 +64,11 @@ var setSpeed = function(){
 		execspeed = Number(spdd);
 };
 
+var reboot = function(){
+	//Waiting for IAS reboot funtion
+	return;
+}
+
 //Allow only numbers events
 var validateNumber = function (event) {
     var key = window.event ? event.keyCode : event.which;
