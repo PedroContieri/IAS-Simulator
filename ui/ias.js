@@ -1,4 +1,4 @@
-var IAS = (function () {
+var IAS = (function () { // this module encapsulates the IAS machine and the associated RAM
 
 	// default initialization code
 	// constants
@@ -27,7 +27,7 @@ var IAS = (function () {
 		return Math.floor(value / POW_OF_2[lsb]) % POW_OF_2[numbits];
 	};
 
-	// left pads str with amt padchars
+	// left pads a string (str) with amt padchars
 	var leftPadWithChar = function (str, padchars, amt) {
 		var result = "";
 		for (var i = 0; i < amt; i++) {
@@ -87,8 +87,8 @@ var IAS = (function () {
 	// valid memory/register attributes for getRAM, setRAM, getCPU queries. case insensitive
 	var opcode_register_props = { // IR attributes
 		leftopcode: true,
-		leftopcodeHex: true,
-		leftopcodeText: true,
+		leftopcodehex: true,
+		leftopcodetext: true,
 		rightopcode: true,
 		rightopcodehex: true,
 		rightopcodetext: true,
@@ -98,6 +98,24 @@ var IAS = (function () {
 		leftaddrhex: true,
 		rightaddr: true,
 		rightaddrhex: true
+	};
+	var instruction_register_props = { // IBR attributes
+		leftopcode: true,
+		leftopcodehex: true,
+		leftopcodetext: true,
+		leftaddr: true,
+		leftaddrhex: true,
+		leftinstruction: true,
+		leftinstructionhex: true,
+		leftinstructiontext: true,
+		rightopcode: true,
+		rightopcodehex: true,
+		rightopcodetext: true,
+		rightaddr: true,
+		rightaddrhex: true,
+		rightinstruction: true,
+		rightinstructionhex: true,
+		rightinstructiontext: true
 	};
 	var fortybit_register_props = { // other registers and memory
 		leftopcode: true,
@@ -116,49 +134,49 @@ var IAS = (function () {
 		rightinstruction: true,
 		rightinstructionhex: true,
 		rightinstructiontext: true,
-		number: true,
-		rawhexnumber: true
+		wordvalue: true,
+		wordvaluehex: true
 	}
 	var registers_to_prop = {
 		ir: opcode_register_props,
 		mar: addr_register_props,
 		pc: addr_register_props,
-		ibr: fortybit_register_props,
+		ibr: instruction_register_props,
 		mbr: fortybit_register_props,
 		ac: fortybit_register_props,
 		mq: fortybit_register_props
 	};
 
 	// returns an object with all possible attributes of a 40 bit word
-	var getWordAttributes = function (word, property) {
+	var getWordAttributes = function (word) {
 
 		var blankinstruction = "                    "; // 20 spaces
 		var attributes = {};
 
 		attributes.leftopcode = selectBits(word, 32, 8);
 		attributes.leftopcodehex = attributes.leftopcode.toString(16).toUpperCase();
-		attributes.leftopcodetext = instructions[leftopcode] !== undefined ? instructions[leftopcode].name : blankinstruction;
+		attributes.leftopcodetext = instructions[attributes.leftopcode] !== undefined ? instructions[attributes.leftopcode].name : blankinstruction;
 
 		attributes.rightopcode = selectBits(word, 12, 8);
 		attributes.rightopcodehex = attributes.rightopcode.toString(16).toUpperCase();
-		attributes.rightopcodetext = instructions[rightopcode] !== undefined ? instructions[rightopcode].name : blankinstruction;
+		attributes.rightopcodetext = instructions[attributes.rightopcode] !== undefined ? instructions[attributes.rightopcode].name : blankinstruction;
 
 		attributes.leftaddr = selectBits(word, 20, 12);
-		attributes.leftaddrhex = attributes.leftAddr.toString(16).toUpperCase();
+		attributes.leftaddrhex = attributes.leftaddr.toString(16).toUpperCase();
 
 		attributes.rightaddr = selectBits(word, 0, 12);
 		attributes.rightaddrhex = attributes.rightaddr.toString(16).toUpperCase();
 
 		attributes.leftinstruction = selectBits(word, 20, 20);
-		attributes.leftinstructionhex = attributes.leftInstruction.toString(16).toUpperCase();
-		attributes.leftinstructiontext = instructions[leftopcode] !== undefined ? instructions[leftopcode].name.replace('X', "0x" + attributes.leftaddrhex) : blankinstruction;
+		attributes.leftinstructionhex = attributes.leftinstruction.toString(16).toUpperCase();
+		attributes.leftinstructiontext = instructions[attributes.leftopcode] !== undefined ? instructions[attributes.leftopcode].name.replace('X', "0x" + attributes.leftaddrhex) : blankinstruction;
 
 		attributes.rightinstruction = selectBits(word, 0, 20);
 		attributes.rightinstructionhex = attributes.rightinstruction.toString(16).toUpperCase();
-		attributes.rightinstructiontext = instructions[rightopcode] !== undefined ? instructions[rightopcode].name.replace('X', "0x" + attributes.rightaddrhex) : blankinstruction;
+		attributes.rightinstructiontext = instructions[attributes.rightopcode] !== undefined ? instructions[attributes.rightopcode].name.replace('X', "0x" + attributes.rightaddrhex) : blankinstruction;
 
-		attributes.number = word >= POW_OF_2[39] ? POW_OF_2[40] - word : word; // if word is negative, get the 2's complement
-		attributes.rawhexnumber = word.toString(16).toUpperCase();
+		attributes.wordvalue = word >= POW_OF_2[39] ? POW_OF_2[40] - word : word; // if word is negative, get the 2's complement
+		attributes.wordvaluehex = word.toString(16).toUpperCase();
 
 		return attributes;
 	};
@@ -403,11 +421,13 @@ var IAS = (function () {
 	// IAS public methods:
 	return {
 
+		// this is the CPU state you are guaranteed at startup
 		reset: function () {
 			reg.ctrl = "left_fetch";
 			reg.pc = 0;
 		},
 
+		// fetches an instruction (pointed to by PC or in IBR)
 		fetch: function () {
 			
 			if (reg.ctrl === "left_fetch") {
@@ -440,6 +460,7 @@ var IAS = (function () {
 
 		},
 
+		// executes an instruction (that's already been fetched)
 		execute: function () {
 
 			if (reg.ctrl.indexOf("execute") === -1) { // if not an execute cycle
@@ -473,6 +494,7 @@ var IAS = (function () {
 
 		},
 
+		// query an attribute (prop) of a word in memory. see list of attributes above
 		getRAM: function (addr, prop) {
 			validateDataAccess(addr);
 			var attributes = getWordAttribute(ram[addr]);
@@ -486,7 +508,7 @@ var IAS = (function () {
 			return attributes[prop];
 		},
 
-
+		// query an attribute (prop) of a CPU register. see list of allowed attributes above
 		getCPU: function (register, prop) {
 			register = register.toLowerCase();
 			prop = prop.toLowerCase();
@@ -515,7 +537,7 @@ var IAS = (function () {
 			return getWordAttributes(word)[prop]; // return the desired property
 		},
 
-
+		// assign value to an attribute (prop) of a word in memory
 		setRAM: function (addr, prop, value) {
 
 			prop = prop.toLowerCase();
@@ -578,14 +600,14 @@ var IAS = (function () {
 				   "IR: " + "0x" + attributesIR.rightopcodehex + "\t" + attributesIR.rightopcode + "\t" + attributesIR.rightopcodetext + "\n" +
 				   "MAR: " + "0x" + attributesMAR.rightaddrhex + "\t" + attributesMAR.rightaddr + "\n" +
 				   "PC: " + "0x" + attributesPC.rightaddrhex + "\t" + attributesPC.rightaddr + "\n" +
-				   "IBR: " + "0x" + attributesIBR.rightopcodehex + " " + attributesIR.rightaddrhex + "\t" + attributesIR.rightinstructiontext + "\n" +
+				   "IBR: " + "0x" + attributesIBR.rightopcodehex + " " + attributesIBR.rightaddrhex + "\t" + attributesIBR.rightinstructiontext + "\n" +
 				   "MBR: " + "0x" + attributesMBR.leftopcodehex + " " + attributesMBR.leftaddrhex + " " + attributesMBR.leftinstructiontext + "\t" + attributesMBR.rightopcodehex + " " + attributesMBR.rightaddrhex + " " + attributesMBR.rightinstructiontext + "\n" +
-				   "AC: " + "0x" + attributesAC.rawhexnumber + "\t" + attributesAC.number + "\n" +
-				   "MQ: " + "0x" + attributesMQ.rawhexnumber + "\t" + attributesMQ.number + "\n";
+				   "AC: " + "0x" + attributesAC.wordvaluehex + "\t" + attributesAC.wordvalue + "\n" +
+				   "MQ: " + "0x" + attributesMQ.wordvaluehex + "\t" + attributesMQ.wordvalue + "\n";
 				   
 		},
 
-		// returns a memory map (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
+		// returns a memory map (i.e. 000 ab cd ef 01 02 \n 001 cc dd ee ff aa \n ...etc...)
 		dumpRAM: function () {
 			var map = ""; // is there a more efficient way to do it JS than by string concatenation?
 			var ADDRDIGITS = 3; // our address field is 3 digits wide
@@ -593,7 +615,7 @@ var IAS = (function () {
 			for (var i = 0; i < RAM_SIZE; i++) {
 				var addr = i.toString(16);
 				var line = leftPadWithChar(addr, "0", (ADDRDIGITS - addr.length)); // left pad the address field with zeroes
-				line += "\t";
+				line += "\t\t";
 				var word = ram[i];
 				var f1 = selectBits(word, 32, 8).toString(16);
 				var f2 = selectBits(word, 20, 12).toString(16);
@@ -601,7 +623,7 @@ var IAS = (function () {
 				var f4 = selectBits(word, 0, 12).toString(16);
 
 				line += leftPadWithChar(f1, "0", 2-f1.length) + " "; // opcode field: 2 digits wide
-				line += leftPadWithChar(f2, "0", 3-f2.length) + " "; // address field: 3 digits wide
+				line += leftPadWithChar(f2, "0", 3-f2.length) + "\t"; // address field: 3 digits wide
 				line += leftPadWithChar(f3, "0", 2-f3.length) + " ";
 				line += leftPadWithChar(f4, "0", 3-f4.length) + "\n";
 
@@ -616,7 +638,11 @@ var IAS = (function () {
 			var lines = map.split("\n"); // process each line corresponding to a word in memory
 			var re = /^[\s]*([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*)$/i; // match a line: an address followed by hex numbers. whitespace only mandatory for separating the address and the memory value
 			var whitespace = /[\s]/g;
+			var whitespaceonly = /^[\s]*$/;
 			for (var i = 0; i < lines.length; i++) {
+				if (whitespaceonly.test(lines[i])) {
+					continue; // nothing to be parsed on this line
+				}
 				var m = lines[i].match(re); // capture 1: addr. capture 2: number (with possible whitespace interspersed)
 				if (m === null) { // if the line does match our pattern
 					throw {
@@ -635,8 +661,7 @@ var IAS = (function () {
 		}
 
 
-	};
+	}; // IAS public methods
 
 	
-
-}) ();
+}) (); // initialize IAS, define methods and data structures, and return the public methods

@@ -190,13 +190,13 @@ var updateImage = function(phase){
 var updateAll = function(){
 	var operationstr = "";
 	
-	document.getElementById("pc_out").value = IAS.getCPU("pc", "rawHexNumber").toUpperCase();
-	document.getElementById("ac_out").value = IAS.getCPU("ac", "rawHexNumber").toUpperCase();
-	document.getElementById("mq_out").value = IAS.getCPU("mq", "rawHexNumber").toUpperCase();
-	document.getElementById("ir_out").value = IAS.getCPU("ir", "rawHexNumber").toUpperCase();
-	document.getElementById("ibr_out").value = IAS.getCPU("ibr", "rawHexNumber").toUpperCase();
-	document.getElementById("mbr_out").value = IAS.getCPU("mbr", "rawHexNumber").toUpperCase();
-	document.getElementById("mar_out").value = IAS.getCPU("mar", "rawHexNumber").toUpperCase();
+	document.getElementById("ir_out").value = IAS.getCPU("ir", "leftOpcodeHex").toUpperCase();
+	document.getElementById("pc_out").value = IAS.getCPU("pc", "leftAddrHex").toUpperCase();
+	document.getElementById("mar_out").value = IAS.getCPU("mar", "leftAddrHex").toUpperCase();
+	document.getElementById("ibr_out").value = IAS.getCPU("ibr", "rightInstructionHex").toUpperCase();
+	document.getElementById("mbr_out").value = IAS.getCPU("mbr", "wordValueHex").toUpperCase();
+	document.getElementById("ac_out").value = IAS.getCPU("ac", "wordValueHex").toUpperCase();
+	document.getElementById("mq_out").value = IAS.getCPU("mq", "wordValueHex").toUpperCase();
 	
 	opcd = IAS.getCPU("ir", "leftOpcode");
 	
