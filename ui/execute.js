@@ -1,4 +1,4 @@
-var end = false, allRun, ftc = true, execop = "", execspeed = 1000;
+var end = false, allRun, ftc = true, execop = "", execspeed = 1000, ftcstate = "";
 
 //Run next cicle
 var runNext = function(){
@@ -27,6 +27,7 @@ var next = function(){
 	try{
 		if (ftc){
 			ftc = false;
+			ftcstate = IAS.getCPU("ctrl"," ") 
 			IAS.fetch();
 		} else{
 			ftc = true;
