@@ -518,6 +518,9 @@ var IAS = (function () { // this module encapsulates the IAS machine and the ass
 					message: "Specified register " + register + " is not part of the IAS architecture"
 				};
 			}
+			if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
+				return reg.ctrl;
+			}
 			if (registers_to_prop[register][prop] === undefined) { // if prop is not a valid property for the selected register
 				throw {
 					name: "invalidCPURegisterAttribute",
@@ -530,9 +533,6 @@ var IAS = (function () { // this module encapsulates the IAS machine and the ass
 			} else if (register === "ir") { // shift and duplicate so left and right opcodes (which are the same) are available
 				word *= POW_OF_2[12]; // shift
 				word = word + POW_OF_2[20]*word;
-			}
-			if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
-				return reg.ctrl;
 			}
 			return getWordAttributes(word)[prop]; // return the desired property
 		},

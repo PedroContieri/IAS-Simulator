@@ -248,7 +248,7 @@ var updateAll = function(){
 	opcd = IAS.getCPU("ir", "leftOpcode");
 	
 	if(!ftc){
-		if(/*IAS.getCPU("ctrl"," ") === "left-fetch"*/ 1){										//corrigir a função desta linha
+		if(IAS.getCPU("ctrl"," ") === "left_fetch"){										//corrigir a função desta linha
 			document.getElementById("op_out").value = "FETCH LEFT";
 			operationstr = "ftch_left";
 		} else {
