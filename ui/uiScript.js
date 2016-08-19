@@ -10,7 +10,7 @@ var loadMem = function(){
 			commark = true;
 		if(txt.charAt(i) == '\n')
 			commark = false;
-    	if(txt.charAt(i) != ' ' && !commark){
+    	if(txt.charAt(i) != ' ' && !commark && txt.charAt(i) != '\t'){
     		wdtspace += txt.charAt(i);
     	}
    	}
@@ -31,7 +31,7 @@ var loadMem = function(){
 			}
 		}
 	}
-	
+
 	IAS.loadRAM(map);
 	updateMem();
 };
@@ -61,6 +61,7 @@ var updateImage = function(phase){
 			document.getElementById("mbr_ibr").style.stroke = "#ff5050";
 			
 			document.getElementById("ar_pc_mar").style.opacity = "100";
+			document.getElementById("ar_mbr_mar").style.opacity = "100";
 			document.getElementById("ar_mar_main").style.opacity = "100";
 			document.getElementById("ar_main_mbr").style.opacity = "100";
 			document.getElementById("ar_mbr_ir").style.opacity = "100";
@@ -74,10 +75,13 @@ var updateImage = function(phase){
 			document.getElementById("ir_box").style.fill = "#ff5050";
 			document.getElementById("ibr_ir").style.stroke = "#ff5050";
 			document.getElementById("pc_box").style.fill = "#ff5050";
+			document.getElementById("mar_box").style.fill = "#ff5050";
+			document.getElementById("ibr_mar").style.stroke = "#ff5050";
 			
 			document.getElementById("ar_ibr_ir").style.opacity = "100";
 			document.getElementById("plus_one").style.opacity = "100";
 			document.getElementById("plus_pc").style.opacity = "100";
+			document.getElementById("ar_ibr_mar").style.opacity = "100";
 			break;
 			
 		case "reset":
@@ -93,6 +97,7 @@ var updateImage = function(phase){
 			document.getElementById("mbr_ir").style.stroke = "#000000";
 			document.getElementById("mbr_ibr").style.stroke = "#000000";
 			document.getElementById("control_box").style.fill = "#ffffff";
+			document.getElementById("ibr_mar").style.stroke = "#000000";
 			document.getElementById("ibr_box").style.fill = "#ffffff";
 			document.getElementById("ir_box").style.fill = "#ffffff";
 			document.getElementById("ibr_ir").style.stroke = "#000000";
@@ -129,10 +134,14 @@ var updateImage = function(phase){
 			document.getElementById("plus_one").style.opacity = "0";
 			document.getElementById("plus_pc").style.opacity = "0";
 			document.getElementById("control_ula").style.opacity = "0";
+			document.getElementById("ar_ibr_mar").style.opacity = "0";
+			document.getElementById("ar_mq_ac").style.opacity = "0";
+			document.getElementById("ar_mbr_mar").style.opacity = "0";
 			break;
 		
-		case "exec_addsubshift":
+		case "exec_addsub":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
@@ -144,26 +153,33 @@ var updateImage = function(phase){
 			document.getElementById("main_box").style.fill = "#0066ff";
 			document.getElementById("main_mbr").style.stroke = "#0066ff";
 			document.getElementById("mbr_ula").style.stroke = "#0066ff";
+			document.getElementById("mar_box").style.fill = "#0066ff";
+			document.getElementById("mar_main").style.stroke = "#0066ff";
 			
 			document.getElementById("ar_mbr_ula").style.opacity = "100";
 			document.getElementById("ar_main_mbr").style.opacity = "100";
 			document.getElementById("ar_ac_ula").style.opacity = "100";
 			document.getElementById("ar_ula_ac").style.opacity = "100";
 			document.getElementById("control_ula").style.opacity = "100";
+			document.getElementById("ar_mar_main").style.opacity = "100";
 			break;
 		
 		case "exec_loadmq":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
 			document.getElementById("ac_box").style.fill = "#0066ff";
 			document.getElementById("mq_box").style.fill = "#0066ff";
 			document.getElementById("mq_ac").style.stroke = "#0066ff";
+			
+			document.getElementById("ar_mq_ac").style.opacity = "100";
 			break;
 		
 		case "exec_muldiv":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
@@ -173,10 +189,11 @@ var updateImage = function(phase){
 			document.getElementById("ula_mq").style.stroke = "#0066ff";
 			document.getElementById("mq_ula").style.stroke = "#0066ff";
 			document.getElementById("ula_box").style.fill = "#0066ff";
-			document.getElementById("ac_ula").style.stroke = "#0066ff";
 			document.getElementById("ula_ac").style.stroke = "#0066ff";	
 			document.getElementById("mbr_box").style.fill = "#0066ff";
 			document.getElementById("main_box").style.fill = "#0066ff";
+			document.getElementById("mar_box").style.fill = "#0066ff";
+			document.getElementById("mar_main").style.stroke = "#0066ff";
 			document.getElementById("main_mbr").style.stroke = "#0066ff";
 			document.getElementById("mbr_ula").style.stroke = "#0066ff";
 			
@@ -185,31 +202,51 @@ var updateImage = function(phase){
 			document.getElementById("ar_ula_mq").style.opacity = "100";
 			document.getElementById("ar_mq_ula").style.opacity = "100";
 			document.getElementById("ar_ula_ac").style.opacity = "100";
-			document.getElementById("ar_ac_ula").style.opacity = "100";
+			document.getElementById("ar_mar_main").style.opacity = "100";
 			document.getElementById("control_ula").style.opacity = "100";
 			break;
 		
-		case "exec_ldstr":
+		case "exec_ld":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
+			document.getElementById("ir_control").style.stroke = "#0066ff";
+			document.getElementById("ar_ir_control").style.opacity = "100";
+			document.getElementById("control_box").style.fill = "#0066ff";
+			document.getElementById("ac_box").style.fill = "#0066ff";
+			document.getElementById("ula_box").style.fill = "#0066ff";
+			document.getElementById("ula_ac").style.stroke = "#0066ff";
+			document.getElementById("mbr_box").style.fill = "#0066ff";
+			document.getElementById("main_box").style.fill = "#0066ff";
+			document.getElementById("main_mbr").style.stroke = "#0066ff";
+			document.getElementById("mbr_ula").style.stroke = "#0066ff";
+			document.getElementById("mar_box").style.fill = "#0066ff";
+			document.getElementById("mar_main").style.stroke = "#0066ff";
+			
+			document.getElementById("ar_ula_ac").style.opacity = "100";
+			document.getElementById("ar_main_mbr").style.opacity = "100";
+			document.getElementById("ar_mbr_ula").style.opacity = "100";
+			document.getElementById("control_ula").style.opacity = "100";
+			document.getElementById("ar_mar_main").style.opacity = "100";
+			break;
+			
+		case "exec_str":
+			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
 			document.getElementById("ac_box").style.fill = "#0066ff";
 			document.getElementById("ula_box").style.fill = "#0066ff";
 			document.getElementById("ac_ula").style.stroke = "#0066ff";
-			document.getElementById("ula_ac").style.stroke = "#0066ff";
 			document.getElementById("mbr_box").style.fill = "#0066ff";
 			document.getElementById("main_box").style.fill = "#0066ff";
-			document.getElementById("main_mbr").style.stroke = "#0066ff";
-			document.getElementById("mbr_ula").style.stroke = "#0066ff";
+			document.getElementById("mbr_main").style.stroke = "#0066ff";
 			document.getElementById("ula_mbr").style.stroke = "#0066ff";
 			document.getElementById("mar_box").style.fill = "#0066ff";
 			document.getElementById("mar_main").style.stroke = "#0066ff";
 			
-			document.getElementById("ar_ula_ac").style.opacity = "100";
 			document.getElementById("ar_ac_ula").style.opacity = "100";
-			document.getElementById("ar_main_mbr").style.opacity = "100";
-			document.getElementById("ar_mbr_ula").style.opacity = "100";
+			document.getElementById("ar_mbr_main").style.opacity = "100";
 			document.getElementById("ar_ula_mbr").style.opacity = "100";
 			document.getElementById("control_ula").style.opacity = "100";
 			document.getElementById("ar_mar_main").style.opacity = "100";
@@ -217,29 +254,40 @@ var updateImage = function(phase){
 			
 		case "exec_jump":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
 			document.getElementById("ac_box").style.fill = "#ff5050";
 			document.getElementById("ula_box").style.fill = "#ff5050";
 			document.getElementById("ac_ula").style.stroke = "#ff5050";
-			document.getElementById("mbr_box").style.fill = "#ff5050";
-			document.getElementById("mbr_ir").style.stroke = "#ff5050";
-			document.getElementById("ula_mbr").style.stroke = "#ff5050";
 			document.getElementById("mar_box").style.fill = "#ff5050";
 			document.getElementById("pc_box").style.fill = "#ff5050";
 			document.getElementById("mar_pc").style.stroke = "#ff5050";
 			
 			document.getElementById("ar_ac_ula").style.opacity = "100";
-			document.getElementById("ar_mbr_ir").style.opacity = "100";
-			document.getElementById("ar_ula_mbr").style.opacity = "100";
 			document.getElementById("ar_mar_pc").style.opacity = "100";
-			document.getElementById("ar_mbr_reg").style.opacity = "100";
 			document.getElementById("control_ula").style.opacity = "100";
+			break;
+		
+		case "exec_shift":
+			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
+			document.getElementById("ir_control").style.stroke = "#0066ff";
+			document.getElementById("ar_ir_control").style.opacity = "100";
+			document.getElementById("control_box").style.fill = "#0066ff";
+			document.getElementById("ac_box").style.fill = "#0066ff";
+			document.getElementById("ula_box").style.fill = "#0066ff";
+			document.getElementById("ac_ula").style.stroke = "#0066ff";
+			
+			document.getElementById("ar_ac_ula").style.opacity = "100";
+			document.getElementById("ar_ula_ac").style.opacity = "100";
+			document.getElementById("control_ula").style.opacity = "100";			
 			break;
 			
 		case "exec_loadmqm":
 			updateImage("reset");
+			document.getElementById("ir_box").style.fill = "#0066ff";
 			document.getElementById("ir_control").style.stroke = "#0066ff";
 			document.getElementById("ar_ir_control").style.opacity = "100";
 			document.getElementById("control_box").style.fill = "#0066ff";
@@ -249,16 +297,15 @@ var updateImage = function(phase){
 			document.getElementById("mbr_box").style.fill = "#0066ff";
 			document.getElementById("main_box").style.fill = "#0066ff";
 			document.getElementById("main_mbr").style.stroke = "#0066ff";
-			document.getElementById("mbr_main").style.stroke = "#0066ff";
 			document.getElementById("mbr_ula").style.stroke = "#0066ff";
-			document.getElementById("ula_mbr").style.stroke = "#0066ff";
+			document.getElementById("mar_box").style.fill = "#0066ff";
+			document.getElementById("mar_main").style.stroke = "#0066ff";
 			
 			document.getElementById("ar_ula_mq").style.opacity = "100";
 			document.getElementById("ar_main_mbr").style.opacity = "100";
-			document.getElementById("ar_mbr_main").style.opacity = "100";
 			document.getElementById("ar_mbr_ula").style.opacity = "100";
-			document.getElementById("ar_ula_mbr").style.opacity = "100";
 			document.getElementById("control_ula").style.opacity = "100";
+			document.getElementById("ar_mar_main").style.opacity = "100";
 			break;
 	}
 };
@@ -293,10 +340,14 @@ var updateAll = function(){
 			operationstr = "exec_loadmq";
 		} else if(opcd == 9){
 			operationstr = "exec_loadmqm";
-		} else if(opcd == 33 || opcd == 1 || opcd == 2 || opcd == 3 || opcd == 22 || opcd == 23){
-			operationstr = "exec_ldstr";
-		} else if(opcd == 5 || opcd == 6 || opcd == 7 || opcd == 8 || opcd == 24 || opcd == 25){
-			operationstr = "exec_addsubshift";
+		} else if( opcd == 0x1 || opcd == 0x2 || opcd == 0x3){
+			operationstr = "exec_ld";
+		} else if(opcd == 0x12 || opcd == 0x13 || opcd == 0x21){
+			operationstr = "exec_str";
+		} else if(opcd == 5 || opcd == 6 || opcd == 7 || opcd == 8 ){
+			operationstr = "exec_addsub";
+		} else if(opcd == 0x14 || opcd == 0x15){
+			operationstr = "exec_shift";
 		} else if(opcd == 11 || opcd == 12){
 			operationstr = "exec_muldiv";
 		}  else if(opcd == 15 || opcd == 16 || opcd == 13 || opcd == 14){
