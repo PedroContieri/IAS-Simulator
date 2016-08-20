@@ -243,10 +243,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				tmp = POW_OF_2[40] - tmp; // negate it
 			}
 
-			var uppermq = selectBits(mq, 20, 20);
-			var lowermq = selectBits(mq, 0, 20);
+			var uppermq = selectBits(reg.mq, 20, 20);
+			var lowermq = selectBits(reg.mq, 0, 20);
 			var uppermem = selectBits(tmp, 20, 20);
-			var lowermem = selectBits(tmp, 0, 0);
+			var lowermem = selectBits(tmp, 0, 20);
 
 			reg.ac = uppermq * uppermem; // AC takes the upper 40 bits
 			reg.mq = lowermq * lowermem; // MQ takes the lower 40 bits
@@ -380,9 +380,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	};
 
 	var mapInstructionNameToOpcode = {}; // EX: "ADDM(X)" -> 5. yes, we do strip the whitespace, which makes the parsing done by instructionStringToBinary easier
-	for (var instr in instructions) {
-		if (instructions.hasOwnProperty(instr)) { // for each instruction
-			mapInstructionNameToOpcode[eliminateWhitespace(instr.name)] = instr; // map the instruction name to the number
+	for (var i in instructions) {
+		if (instructions.hasOwnProperty(i)) { // for each instruction
+			mapInstructionNameToOpcode[eliminateWhitespace(instructions[i].name)] = i; // map the instruction name to the number
 		}
 	}
 
@@ -417,7 +417,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:32, numbits:8, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 2 - s.length); // 2 hex digits in opcode field
+			},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
 		leftopcodetext: {
@@ -426,9 +429,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				return mapInstructionNameToOpcode[eliminateWhitespace(val)]
 			},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return instructions[field]},
+			convertFieldToVal: function(field) {return instructions[field].name},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
-		}
+		},
 		rightopcode: {
 			lsb:12, numbits:8,
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
@@ -439,7 +442,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:12, numbits:8, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 2 - s.length); // 2 hex digits in opcode field
+			},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
 		rightopcodetext: {
@@ -448,7 +454,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				return mapInstructionNameToOpcode[eliminateWhitespace(val)]
 			},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return instructions[field]},
+			convertFieldToVal: function(field) {return instructions[field].name},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
 
@@ -463,7 +469,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		leftaddrhex: {lsb:20, numbits:12, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 3 - s.length); // 3 hex digits in address field
+			},
 			validate: function(val) {
 				return (val < POW_OF_2[12] && val >= 0 && val === Math.floor(val)) ? true : false
 			}
@@ -480,7 +489,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:0, numbits:12, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 3 - s.length); // 3 hex digits in address field
+			},
 			validate: function(val) {
 				return (val < POW_OF_2[12] && val >= 0 && val === Math.floor(val)) ? true : false
 			}
@@ -495,7 +507,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:20, numbits:20, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,ir:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()}
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 5 - s.length); // 5 hex digits in instruction field
+			},
 		},
 		leftinstructiontext: {
 			lsb:20, numbits:20,
@@ -506,7 +521,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			}
 		},
 		rightinstruction: {
-			lsb:0, numbits:20
+			lsb:0, numbits:20,
 			validObj: {ram:true,ir:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
 			convertValToField: identityfunction, convertFieldToVal: identityfunction
 		},
@@ -514,7 +529,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:0, numbits:20, 
 			convertValToField: function(val) {return parseInt(val, 16)},
 			validObj: {ram:true,ir:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 5 - s.length); // 5 hex digits in instruction field
+			},
 		},
 		rightinstructiontext: {
 			lsb:0, numbits:20,
@@ -548,7 +566,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			lsb:0, numbits:40,
 			validObj: {mbr:true,ac:true,mq:true},
 			convertValToField: function(val) {return parseInt(val, 16)},
-			convertFieldToVal: function(field) {return field.toString(16).toUpperCase()},
+			convertFieldToVal: function(field) {
+				var s = field.toString(16).toUpperCase();
+				return leftPadWithChar(s, "0", 10 - s.length); // 10 hex digits in a word
+			},
 			validate: function(val) {
 				return (val < POW_OF_2[40] && val >= 0 && val === Math.floor(val)) ? true : false
 			}
@@ -576,7 +597,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 		if (foundInstruction === false) { // if there is match for the given string
 			throw {
-				name: "invalidInstructionString"
+				name: "invalidInstructionString",
 				message: instructiontext + "\nis not a valid IAS instruction"
 			};
 		}
@@ -634,292 +655,289 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	*/
 
 	// IAS public methods:
-	return {
 
-		// this is the CPU state you are guaranteed at startup
-		reset: function () {
-			reg.ctrl = "left_fetch";
-			reg.pc = 0;
-		},
+	// this is the CPU state you are guaranteed at startup
+	var reset = function () {
+		reg.ctrl = "left_fetch";
+		reg.pc = 0;
+	};
 
-		// completely reset all the registers
-		zeroAllRegisters: function () {
-			reg.pc = reg.mar = reg.ir = reg.ibr = reg.mbr = reg.ac = reg.mq = 0;
-			reg.ctrl = "left_fetch";
-		},
+	// completely reset all the registers
+	var zeroAllRegisters = function () {
+		reg.pc = reg.mar = reg.ir = reg.ibr = reg.mbr = reg.ac = reg.mq = 0;
+		reg.ctrl = "left_fetch";
+	};
 
-		zeroAllRAM: function () {
-			for (var i = 0; i < RAM_SIZE; i++) {
-				ram[i] = 0;
-			}
+	var zeroAllRAM = function () {
+		for (var i = 0; i < RAM_SIZE; i++) {
+			ram[i] = 0;
+		}
+	};
+
+	// fetches an instruction (pointed to by PC or in IBR)
+	var fetch = function () {
+		
+		if (reg.ctrl === "left_fetch") {
+			validateInstructionFetch();
+			reg.mar = reg.pc;
+			reg.mbr = ram[reg.mar];
+			reg.ir = selectBits(reg.mbr, 32, 8);
+			reg.mar = selectBits(reg.mbr, 20, 12);
+			reg.ibr = selectBits(reg.mbr, 0, 20);
+			reg.ctrl = "left_execute";
+		} else if (reg.ctrl === "right_fetch") {
+			reg.ir = selectBits(reg.ibr, 12, 8);
+			reg.mar = selectBits(reg.ibr, 0, 12);
+			reg.pc++;
+			reg.ctrl = "right_execute";
+		} else if (reg.ctrl === "right_fetch_RAM") { // after a jump to the right
+			validateInstructionFetch();
+			reg.mar = reg.pc;
+			reg.mbr = ram[reg.mar];
+			reg.ir = selectBits(reg.mbr, 12, 8);
+			reg.mar = selectBits(reg.mbr, 0, 12);
+			reg.pc++;
+			reg.ctrl = "right_execute";
+		} else {
+			throw {
+				name: "invalidFetch",
+				message: "Invalid attempt to fetch an instruction during an execute cycle"
+			};
 		}
 
-		// fetches an instruction (pointed to by PC or in IBR)
-		fetch: function () {
+	};
+
+	// executes an instruction (that's already been fetched)
+	var execute = function () {
+
+		if (reg.ctrl.indexOf("execute") === -1) { // if not an execute cycle
+			throw {
+				name: "invalidExecution",
+				message: "invalid attempt to execute an instruction during a fetch cycle"
+			};
+		}
+		
+		if (instructions[reg.ir] !== undefined) { // if the instruction exists
+			instructions[reg.ir].execute();
+
+			// now make sure we will execute the correct fetch cycle:
+			if (instructions[reg.ir].name.indexOf("JUMP") === -1) { // if it's not a jump instruction
+				if (reg.ctrl === "left_execute") {
+					reg.ctrl = "right_fetch";
+				} else { // we executed an instruction at the right
+					reg.ctrl = "left_fetch";
+				}
+			}
+			// else if it is a jump instruction, then we take care of it at the specific instruction's code
 			
-			if (reg.ctrl === "left_fetch") {
-				validateInstructionFetch();
-				reg.mar = reg.pc;
-				reg.mbr = ram[reg.mar];
-				reg.ir = selectBits(reg.mbr, 32, 8);
-				reg.mar = selectBits(reg.mbr, 20, 12);
-				reg.ibr = selectBits(reg.mbr, 0, 20);
-				reg.ctrl = "left_execute";
-			} else if (reg.ctrl === "right_fetch") {
-				reg.ir = selectBits(reg.ibr, 12, 8);
-				reg.mar = selectBits(reg.ibr, 0, 12);
-				reg.pc++;
-				reg.ctrl = "right_execute";
-			} else if (reg.ctrl === "right_fetch_RAM") { // after a jump to the right
-				validateInstructionFetch();
-				reg.mar = reg.pc;
-				reg.mbr = ram[reg.mar];
-				reg.ir = selectBits(reg.mbr, 12, 8);
-				reg.mar = selectBits(reg.mbr, 0, 12);
-				reg.pc++;
-				reg.ctrl = "right_execute";
+		} else { // non existent opcode
+			throw {
+				name: "invalidInstruction",
+				message: "Attempt to execute a non-existent instruction with opcode\n" +
+					     reg.ir + " at address \n0x" + 
+					     (reg.ctrl === "left_execute" ? reg.pc : reg.pc-1).toString(16).toUpperCase()
+			}; // note: IAS handout says we should increment PC only in the right fetch cycle - hence the check above
+		}
+
+	};
+
+	// query an attribute (prop) of a word in memory. see list of attributes above
+	var getRAM = function (addr, prop) {
+
+		validateDataAccess(addr);
+		var attr = prop.toLowerCase();
+		var attrInfo = validAttributes[attr];
+		if (attrInfo === undefined) { // if prop is not a valid property for a 40 bit word
+			throw {
+				name: "invalidMemoryAttribute",
+				message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
+			};
+		}
+		return attrInfo.convertFieldToVal(selectBits(ram[addr], attrInfo.lsb, attrInfo.numbits));
+	};
+
+	// query an attribute (prop) of a CPU register. see list of allowed attributes above
+	var getCPU = function (register, prop) {
+		register = register.toLowerCase();
+		if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
+			return reg.ctrl;
+		}
+		prop = prop.toLowerCase();
+		if (register === "ir" || register === "ibr" || register === "pc" || register === "mar") {
+			prop = prop.replace("left", "right"); // user can use 'left' in this case, even though there is only one side
+		}
+		
+		var attrInfo = validAttributes[prop];
+		if (reg[register] === undefined) { // if there is no such register
+			throw {
+				name: "invalidRegister",
+				message: "Specified register " + register + " is not part of the IAS architecture"
+			};
+		}
+		if (attrInfo === undefined || attrInfo.validObj[register] === undefined) { // if prop is not a valid property for the selected register
+			throw {
+				name: "invalidCPURegisterAttribute",
+				message: "The specified attribute " + prop + " is not valid for the register " + register
+			};
+		}
+		var word = reg[register];
+		var lsb = register === "ir" ? 0 : attrInfo.lsb; // IR's opcode field actually starts at bit 0
+		return attrInfo.convertFieldToVal(selectBits(word, lsb, attrInfo.numbits)); // return the desired property
+	};
+
+	// assign value to an attribute (prop) of a word in memory
+	var setRAM = function (addr, prop, value) {
+
+		validateDataAccess(addr);
+		prop = prop.toLowerCase();
+		var attr = prop.toLowerCase();
+		var attrInfo = validAttributes[attr];
+		if (attrInfo === undefined) { // if prop is not a valid property for a 40 bit word
+			throw {
+				name: "invalidMemoryAttribute",
+				message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
+			};
+		}
+		
+		var word = attrInfo.convertValToField(value);
+		if (attrInfo.validate(word) === false) { // invalid input
+			throw {
+				name: "invalidAttributeValue",
+				message: "The value\n" + value + "\nis not valid for attribute\n" + attr
+			};
+		}
+		var field = selectBits(ram[addr], attrInfo.lsb, attrInfo.numbits); // we want to replace this field
+		ram[addr] += POW_OF_2[attrInfo.lsb]*(word - field); // write the replaced value to memory
+
+	};
+
+	// assign a value to an attribute (prop) of a CPU register. see the list above for valid attributes
+	var setCPU = function (register, prop, value) {
+		register = register.toLowerCase();
+		if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
+			if (validCtrlStates[value] !== undefined) { // if value is a valid string
+				reg.ctrl = value;
+				return;
 			} else {
 				throw {
-					name: "invalidFetch",
-					message: "Invalid attempt to fetch an instruction during an execute cycle"
+					name: "invalidCPUState",
+					message: "an invalid CPU state string, " + value + ", was specified"
 				};
-			}
-
-		},
-
-		// executes an instruction (that's already been fetched)
-		execute: function () {
-
-			if (reg.ctrl.indexOf("execute") === -1) { // if not an execute cycle
-				throw {
-					name: "invalidExecution",
-					message: "invalid attempt to execute an instruction during a fetch cycle"
-				};
-			}
-			
-			if (typeof instructions[reg.ir].execute === "function") { // if the instruction exists
-				instructions[reg.ir].execute();
-
-				// now make sure we will execute the correct fetch cycle:
-				if (instructions[reg.ir].name.indexOf("JUMP") === -1) { // if it's not a jump instruction
-					if (reg.ctrl === "left_execute") {
-						reg.ctrl = "right_fetch";
-					} else { // we executed an instruction at the right
-						reg.ctrl = "left_fetch";
-					}
-				}
-				// else if it is a jump instruction, then we take care of it at the specific instruction's code
-				
-			} else { // non existent opcode
-				throw {
-					name: "invalidInstruction",
-					message: "Attempt to execute a non-existent instruction with opcode\n" +
-						     reg.ir + " at address \n0x" + 
-						     (reg.ctrl === "left_execute" ? reg.pc : reg.pc-1).toString(16).toUpperCase()
-				}; // note: IAS handout says we should increment PC only in the right fetch cycle - hence the check above
-			}
-
-		},
-
-		// query an attribute (prop) of a word in memory. see list of attributes above
-		getRAM: function (addr, prop) {
-
-			validateDataAccess(addr);
-			var attr = prop.toLowerCase();
-			var attrInfo = validAttributes[attr];
-			if (attrInfo === undefined) { // if prop is not a valid property for a 40 bit word
-				throw {
-					name: "invalidMemoryAttribute",
-					message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
-				};
-			}
-			return attrInfo.convertFieldToVal(selectBits(ram[addr], attrInfo.lsb, attrInfo.numbits));
-		},
-
-		// query an attribute (prop) of a CPU register. see list of allowed attributes above
-		getCPU: function (register, prop) {
-			register = register.toLowerCase();
-			prop = prop.toLowerCase();
-			var attrInfo = validAttributes[prop];
-			if (reg[register] === undefined) { // if there is no such register
-				throw {
-					name: "invalidRegister",
-					message: "Specified register " + register + " is not part of the IAS architecture"
-				};
-			}
-			if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
-				return reg.ctrl;
-			}
-			if (attrInfo === undefined || attrInfo.validObj[register] === undefined) { // if prop is not a valid property for the selected register
-				throw {
-					name: "invalidCPURegisterAttribute",
-					message: "The specified attribute " + prop + " is not valid for the register " + register
-				};
-			}
-			var word = reg[register];
-			if (register === "ibr" || register === "pc" || register === "mar") { // IBR is duplicated (left and right instructions are one and the same). for the address registers, duplication works as well
-				word = word + POW_OF_2[20]*word;
-			} else if (register === "ir") { // shift and duplicate so left and right opcodes (which are the same) are available
-				word *= POW_OF_2[12]; // shift
-				word = word + POW_OF_2[20]*word;
-			}
-			return attrInfo.convertFieldToVal(selectBits(word, attrInfo.lsb, attrInfo.numbits)); // return the desired property
-		},
-
-		// assign value to an attribute (prop) of a word in memory
-		setRAM: function (addr, prop, value) {
-
-			validateDataAccess(addr);
-			prop = prop.toLowerCase();
-			var attr = prop.toLowerCase();
-			var attrInfo = validAttributes[attr];
-			if (attrInfo === undefined) { // if prop is not a valid property for a 40 bit word
-				throw {
-					name: "invalidMemoryAttribute",
-					message: "The specified attribute " + prop + " is not valid for a 40 bit word in RAM"
-				};
-			}
-			
-			var word = attrInfo.convertValToField(value);
-			if (attrInfo.validate(word) === false) { // invalid input
-				throw {
-					name: "invalidAttributeValue",
-					message: "The value\n" + value + "\nis not valid for attribute\n" + attr
-				};
-			}
-			var field = selectBits(ram[addr], attrInfo.lsb, attrInfo.numbits); // we want to replace this field
-			ram[addr] += POW_OF_2[attrInfo.lsb]*(word - field); // write the replaced value to memory
-
-		},
-
-		// assign a value to an attribute (prop) of a CPU register. see the list above for valid attributes
-		setCPU: function (register, prop, value) {
-			register = register.toLowerCase();
-			prop = prop.toLowerCase();
-
-			if (register === "ir" || register === "ibr" || register === "pc" || register === "mar") { // IBR is duplicated (left and right instructions are one and the same). for the address registers, duplication works as well
-				value = value.replace("left", "right"); // user can use 'left' in this case, even though there is only one side
-			}
-			if (register === "ir") { // shift and duplicate so left and right opcodes (which are the same) are available
-				word *= POW_OF_2[12]; // shift the register so that (right) opcode field is properly aligned
-			}
-
-			var attrInfo = validAttributes[prop];
-			if (reg[register] === undefined) { // if there is no such register
-				throw {
-					name: "invalidRegister",
-					message: "Specified register " + register + " is not part of the IAS architecture"
-				};
-			}
-			if (register === "ctrl") { // CTRL is just the fetch/execute cycle state
-				if (validCtrlStates[value] !== undefined) { // if value is a valid string
-					reg.ctrl = value;
-					return;
-				} else {
-					throw {
-						name: "invalidCPUState",
-						message: "an invalid CPU state string, " + value + ", was specified"
-					};
-				}
-			}
-			if (attrInfo === undefined || attrInfo.validObj[register] === undefined) { // if prop is not a valid property for the selected register
-				throw {
-					name: "invalidCPURegisterAttribute",
-					message: "The specified attribute " + prop + " is not valid for the register " + register
-				};
-			}
-
-			var word = attrInfo.convertValToField(value);
-			if (attrInfo.validate(word) === false) { // invalid input
-				throw {
-					name: "invalidCPUAttributeValue",
-					message: "The value\n" + value + "\nis not valid for attribute\n" + attr "\nof register " + register
-				};
-			}
-			var field = selectBits(reg[register], attrInfo.lsb, attrInfo.numbits); // we want to replace this field
-			reg[register] += POW_OF_2[attrInfo.lsb]*(word - field); // write the replaced value to the register
-
-			if (register === "ir") {
-				word = Math.floor(word / POW_OF_2[12]); // undo the shift to IR we had to do above
-			}
-
-		},
-
-
-		// dumps CPU information
-		dumpCPU: function () {
-			reg.ir = reg.ir * POW_OF_2[12]); // put IR's "opcode field" in place so we can read it
-			var returnstring = "IAS" +
-				   "CTRL: " + reg.ctrl + "\n" +
-				   "IR: " + "0x" + getCPU("IR", "rightopcodehex") + "\t" + getCPU("IR", "rightopcode") + "\t" + getCPU("IR", "rightopcodetext") + "\n" +
-				   "MAR: " + "0x" + getCPU("MAR", "rightaddrhex") + "\t" + getCPU("MAR", "rightaddr") + "\n" +
-				   "PC: " + "0x" + getCPU("PC", "rightaddrhex") + "\t" + getCPU("PC", "rightaddr") + "\n" +
-				   "IBR: " + "0x" + getCPU("IBR", "rightopcodehex") + " " + getCPU("IBR", "rightaddrhex") + "\t" + getCPU("IBR", "rightinstructiontext") + "\n" +
-				   "MBR: " + "0x" + getCPU("MBR" "leftopcodehex") + " " + getCPU("MBR" "leftaddrhex") + " " + getCPU("MBR", "leftinstructiontext") + "\t" + getCPU("MBR", "rightopcodehex") + " " + getCPU("MBR", "rightaddrhex") + " " + getCPU("MBR", "rightinstructiontext") + "\n" +
-				   "AC: " + "0x" + getCPU("AC", "wordvaluehex") + "\t" + getCPU("AC", "wordvalue") + "\n" +
-				   "MQ: " + "0x" + getCPU("MQ", "wordvaluehex" + "\t" + getCPU("MQ", "wordvalue") + "\n";
-			reg.ir = Math.floor(reg.ir / POW_OF_2[12]); // undo IR shift done above
-			return returnstring;	   
-		},
-
-		// returns a memory map (i.e. 000 ab cd ef 01 02 \n 001 cc dd ee ff aa \n ...etc...)
-		dumpRAM: function () {
-			var map = ""; // is there a more efficient way to do it JS than by string concatenation?
-			var ADDRDIGITS = 3; // our address field is 3 digits wide
-		
-			for (var i = 0; i < RAM_SIZE; i++) {
-				var addr = i.toString(16);
-				var line = leftPadWithChar(addr, "0", (ADDRDIGITS - addr.length)); // left pad the address field with zeroes
-				line += "\t\t";
-				var word = ram[i];
-				var f1 = getRAM(i, "leftopcodehex"); // grab left opcode field
-				var f2 = getRAM(i, "leftaddrhex"); // grab left address field
-				var f3 = getRAM(i, "rightopcodehex"); // grab right opcode field
-				var f4 = getRAM(i, "rightaddrhex"); // grab right address field
-
-				line += leftPadWithChar(f1, "0", 2-f1.length) + " "; // opcode field: 2 digits wide
-				line += leftPadWithChar(f2, "0", 3-f2.length) + "\t"; // address field: 3 digits wide
-				line += leftPadWithChar(f3, "0", 2-f3.length) + " ";
-				line += leftPadWithChar(f4, "0", 3-f4.length) + "\n";
-
-				map += line.toUpperCase();
-			}
-			return map;
-		},
-
-		// uses a memory map to insert values into RAM
-		// (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
-		loadRAM: function (map) {
-			var lines = map.split("\n"); // process each line corresponding to a word in memory
-			
-			// represents a line with data/instructions: an address followed by hex numbers. 
-			// whitespace only mandatory for separating the address and the memory value
-			var linepattern = /^[\s]*([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*)$/i; 
-			
-			var whitespace = /[\s]/g; // represents a single whitespace
-			var whitespaceonly = /^[\s]*$/; // represents a whitespace only string (possibly empty)
-			for (var i = 0; i < lines.length; i++) {
-				if (whitespaceonly.test(lines[i])) {
-					continue; // nothing to be parsed on this line
-				}
-				var m = lines[i].match(linepattern); // capture 1: line addr. capture 2: number (with possible whitespace interspersed)
-				if (m === null) { // if the line does match our pattern
-					throw {
-						name: "invalidMap",
-						message: "Line " + (i+1) + " of the memory map is not in the valid format:\n" +
-						         "<address> <number> [#comment]" + "\n" +
-						         ", where <number> may have any amount of whitespaces, and comments are optional"
-					};
-				}
-				var addr = parseInt(m[1], 16); // capture group 1 is the line address
-				var number = parseInt(m[2].replace(whitespace, ""), 16); // eliminate whitespace
-				validateDataAccess(addr); // make sure address and number matched are in valid range
-				validateNumRange(number, POW_OF_2[40]);
-				ram[addr] = number;
 			}
 		}
+		prop = prop.toLowerCase();
 
-	}; // IAS public methods
+		if (register === "ir" || register === "ibr" || register === "pc" || register === "mar") {
+			prop = prop.replace("left", "right"); // user can use 'left' in this case, even though there is only one side
+		}
+
+		var attrInfo = validAttributes[prop];
+		if (reg[register] === undefined) { // if there is no such register
+			throw {
+				name: "invalidRegister",
+				message: "Specified register " + register + " is not part of the IAS architecture"
+			};
+		}
+		if (attrInfo === undefined || attrInfo.validObj[register] === undefined) { // if prop is not a valid property for the selected register
+			throw {
+				name: "invalidCPURegisterAttribute",
+				message: "The specified attribute " + prop + " is not valid for the register " + register
+			};
+		}
+
+		var word = attrInfo.convertValToField(value);
+		if (attrInfo.validate(word) === false) { // invalid input
+			throw {
+				name: "invalidCPUAttributeValue",
+				message: "The value\n" + value + "\nis not valid for attribute\n" + attr + "\nof register " + register
+			};
+		}
+		var lsb = register === "ir" ? 0 : attrInfo.lsb; // IR's opcode field actually starts a bit 0.
+		var field = selectBits(reg[register], lsb, attrInfo.numbits); // we want to replace this field
+		reg[register] += POW_OF_2[lsb]*(word - field); // write the replaced value to the register
+
+	};
+
+
+	// dumps CPU information
+	var dumpCPU = function () {
+		reg.ir = reg.ir * POW_OF_2[12]; // put IR's "opcode field" in place so we can read it
+		var returnstring = "IAS" +
+			   "CTRL: " + reg.ctrl + "\n" +
+			   "IR: " + "0x" + getCPU("IR", "rightopcodehex") + "\t" + getCPU("IR", "rightopcode") + "\t" + getCPU("IR", "rightopcodetext") + "\n" +
+			   "MAR: " + "0x" + getCPU("MAR", "rightaddrhex") + "\t" + getCPU("MAR", "rightaddr") + "\n" +
+			   "PC: " + "0x" + getCPU("PC", "rightaddrhex") + "\t" + getCPU("PC", "rightaddr") + "\n" +
+			   "IBR: " + "0x" + getCPU("IBR", "rightopcodehex") + " " + getCPU("IBR", "rightaddrhex") + "\t" + getCPU("IBR", "rightinstructiontext") + "\n" +
+			   "MBR: " + "0x" + getCPU("MBR", "leftopcodehex") + " " + getCPU("MBR", "leftaddrhex") + " " + getCPU("MBR", "leftinstructiontext") + "\t" + getCPU("MBR", "rightopcodehex") + " " + getCPU("MBR", "rightaddrhex") + " " + getCPU("MBR", "rightinstructiontext") + "\n" +
+			   "AC: " + "0x" + getCPU("AC", "wordvaluehex") + "\t" + getCPU("AC", "wordvalue") + "\n" +
+			   "MQ: " + "0x" + getCPU("MQ", "wordvaluehex") + "\t" + getCPU("MQ", "wordvalue") + "\n";
+		reg.ir = Math.floor(reg.ir / POW_OF_2[12]); // undo IR shift done above
+		return returnstring;	   
+	};
+
+	// returns a memory map (i.e. 000 ab cd ef 01 02 \n 001 cc dd ee ff aa \n ...etc...)
+	var dumpRAM = function () {
+		var map = ""; // is there a more efficient way to do it JS than by string concatenation?
+		var ADDRDIGITS = 3; // our address field is 3 digits wide
+	
+		for (var i = 0; i < RAM_SIZE; i++) {
+			var addr = i.toString(16);
+			var line = leftPadWithChar(addr, "0", (ADDRDIGITS - addr.length)); // left pad the address field with zeroes
+			line += "\t\t";
+			var word = ram[i];
+			var f1 = getRAM(i, "leftopcodehex"); // grab left opcode field
+			var f2 = getRAM(i, "leftaddrhex"); // grab left address field
+			var f3 = getRAM(i, "rightopcodehex"); // grab right opcode field
+			var f4 = getRAM(i, "rightaddrhex"); // grab right address field
+
+			line += leftPadWithChar(f1, "0", 2-f1.length) + " "; // opcode field: 2 digits wide
+			line += leftPadWithChar(f2, "0", 3-f2.length) + "\t"; // address field: 3 digits wide
+			line += leftPadWithChar(f3, "0", 2-f3.length) + " ";
+			line += leftPadWithChar(f4, "0", 3-f4.length) + "\n";
+
+			map += line.toUpperCase();
+		}
+		return map;
+	};
+
+	// uses a memory map to insert values into RAM
+	// (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
+	var loadRAM = function (map) {
+		var lines = map.split("\n"); // process each line corresponding to a word in memory
+		
+		// represents a line with data/instructions: an address followed by hex numbers. 
+		// whitespace only mandatory for separating the address and the memory value
+		var linepattern = /^[\s]*([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*)$/i; 
+		
+		var whitespace = /[\s]/g; // represents a single whitespace
+		var whitespaceonly = /^[\s]*$/; // represents a whitespace only string (possibly empty)
+		for (var i = 0; i < lines.length; i++) {
+			if (whitespaceonly.test(lines[i])) {
+				continue; // nothing to be parsed on this line
+			}
+			var m = lines[i].match(linepattern); // capture 1: line addr. capture 2: number (with possible whitespace interspersed)
+			if (m === null) { // if the line does match our pattern
+				throw {
+					name: "invalidMap",
+					message: "Line " + (i+1) + " of the memory map is not in the valid format:\n" +
+					         "<address> <number> [#comment]" + "\n" +
+					         ", where <number> may have any amount of whitespaces, and comments are optional"
+				};
+			}
+			var addr = parseInt(m[1], 16); // capture group 1 is the line address
+			var number = parseInt(m[2].replace(whitespace, ""), 16); // eliminate whitespace
+			validateDataAccess(addr); // make sure address and number matched are in valid range
+			validateNumRange(number, POW_OF_2[40]);
+			ram[addr] = number;
+		}
+	};
+
+	// return the public methods:
+	return {
+		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
+		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
+		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU, loadRAM: loadRAM
+	};
 
 	
 }) (); // initialize IAS, define methods and data structures, and return the public methods
