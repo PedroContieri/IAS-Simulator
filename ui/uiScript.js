@@ -322,39 +322,39 @@ var updateAll = function(){
 	document.getElementById("ac_out").value = IAS.getCPU("ac", "wordValueHex").toUpperCase();
 	document.getElementById("mq_out").value = IAS.getCPU("mq", "wordValueHex").toUpperCase();
 	
-	opcd = IAS.getCPU("ir", "leftOpcode");
-	
 	if(!ftc){
-		if(ftcstate == "left_fetch"){										//corrigir a função desta linha
-			document.getElementById("op_out").value = "FETCH LEFT";
-			operationstr = "ftch_left";
-		} else {
-			document.getElementById("op_out").value = "FETCH RIGHT";
-			operationstr = "ftch_right";
-		}
+	    if(ftcstate == "left_fetch"){										//corrigir a função desta linha
+		document.getElementById("cycle_out").value = "FETCH LEFT";
+	    } else {
+		document.getElementById("cycle_out").value = "FETCH RIGHT";
+	    }
 	}
-	else{
-		document.getElementById("op_out").value = IAS.getCPU("ir", "leftOpcodeText").toUpperCase();
-		
-		if(opcd == 10){
-			operationstr = "exec_loadmq";
-		} else if(opcd == 9){
-			operationstr = "exec_loadmqm";
-		} else if( opcd == 0x1 || opcd == 0x2 || opcd == 0x3){
-			operationstr = "exec_ld";
-		} else if(opcd == 0x12 || opcd == 0x13 || opcd == 0x21){
-			operationstr = "exec_str";
-		} else if(opcd == 5 || opcd == 6 || opcd == 7 || opcd == 8 ){
-			operationstr = "exec_addsub";
-		} else if(opcd == 0x14 || opcd == 0x15){
-			operationstr = "exec_shift";
-		} else if(opcd == 11 || opcd == 12){
-			operationstr = "exec_muldiv";
-		}  else if(opcd == 15 || opcd == 16 || opcd == 13 || opcd == 14){
-			operationstr = "exec_jump";
-		}
+        else{
+	    document.getElementById("cycle_out").value = "EXECUTE";
 	}
-	
-	updateImage(operationstr);
+
+        opcd = IAS.getCPU("ir", "leftOpcode");
+
+        document.getElementById("op_out").value = IAS.getCPU("ir", "leftOpcodeText").toUpperCase();
+        operationstr = "???";
+        if(opcd == 10){
+	    operationstr = "exec_loadmq";
+	} else if(opcd == 9){
+	    operationstr = "exec_loadmqm";
+	} else if( opcd == 0x1 || opcd == 0x2 || opcd == 0x3){
+	    operationstr = "exec_ld";
+	} else if(opcd == 0x12 || opcd == 0x13 || opcd == 0x21){
+	    operationstr = "exec_str";
+	} else if(opcd == 5 || opcd == 6 || opcd == 7 || opcd == 8 ){
+	    operationstr = "exec_addsub";
+	} else if(opcd == 0x14 || opcd == 0x15){
+	    operationstr = "exec_shift";
+	} else if(opcd == 11 || opcd == 12){
+	    operationstr = "exec_muldiv";
+	}  else if(opcd == 15 || opcd == 16 || opcd == 13 || opcd == 14){
+	    operationstr = "exec_jump";
+	}
+
+        updateImage(operationstr);
 	updateMem();
 };

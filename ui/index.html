@@ -42,7 +42,7 @@
 			
 			<div class="col_6" style="margin-top: 20px;">
 				<button class="medium" id="resetbut" onclick="resetAll()"><i class="icon-undo"></i> Reset </button>
-				<button type="button" class="small" onclick="reboot()" style="margin-top: 2%"><i class="icon-upload"></i> Set all zero</button>
+				<button type="button" class="small" onclick="reboot()" style="margin-top: 2%"><i class="icon-upload"></i> Zero Reg/Mem</button>
 				
 				<label for="textset" style="margin-left: 20%"> RunUpdate [ms]</label>
 				<input onkeypress="return validateNumber(event);" name="textset" id = "speedset" placeholder="1000" type="text" size = "5">
@@ -53,15 +53,52 @@
 	
 		
 		<!-- Textbox Area -->
-		<div class="col_6" align="center" style="margin-top: 20px">
+		<div class="col_4" align="center" style="margin-top: 20px">
 			
-			<textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 960px" ></textarea>
-			<br/><br/>
+		        <br/>
 			<button class= "medium" onclick="loadMem()"><i class="icon-save"></i> Send to IAS Memory </button>
 			<br/><br/>
-		
+			<textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 680px" ></textarea>
 		</div>
 		
+		<!-- Registers -->
+		<div class="col_2" align="center">
+
+			<div class="col_2" align="center">
+				<table cellspacing="0" cellpadding="0" align="center">
+					<thead><tr>
+						<th></th>
+						<th>VALUE</th>
+					</tr></thead>
+					<tbody><tr>
+						<td>PC</td>
+						<td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>AC</td>
+						<td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>MQ</td>
+						<td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>MBR</td>
+						<td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>IR</td>
+						<td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>OP</td>
+						<td><input id="op_out" type="text" placeholder="?" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>IBR</td>
+						<td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+					</tr><tr>
+						<td>MAR</td>
+						<td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>				
+					</tr>
+				</table>
+			</div>			
+		</div>
+
 		<!-- IAS SVG -->
 		<div class="col_6" align="center">
 			<p><b>IAS COMPUTER</b></p>
@@ -153,68 +190,28 @@
 				 </g>
 			</svg>
 
-			<div class="col_6" align="center" style= "margin-left:25%;">
-				<table cellspacing="0" cellpadding="0" align="center">
-				<thead><tr>
-					<th>OPERATION</th>
-					<th><input id="op_out" type="text" placeholder="none" disabled="disabled" size= 20/></td></th>
-				</tr></thead>
-				</table>
-			</div>
-			
-			<div class="col_6" align="center">
-				<table cellspacing="0" cellpadding="0" align="center">
-					<thead><tr>
-						<th>REGISTER</th>
-						<th>VALUE</th>
-					</tr></thead>
-					<tbody><tr>
-						<td>PC</td>
-						<td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr><tr>
-						<td>AC</td>
-						<td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr><tr>
-						<td>MQ</td>
-						<td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr>
-					</table>
-			</div>
-			
-			<div class="col_5" align="center">
-				<table cellspacing="0" cellpadding="0" align="center">
-					<thead><tr>
-						<th>REGISTER</th>
-						<th>VALUE</th>
-					</tr></thead>
-					<tbody><tr>
-						<td>MBR</td>
-						<td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr><tr>
-						<td>IR</td>
-						<td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr><tr>
-						<td>IBR</td>
-						<td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
-					</tr><tr>
-						<td>MAR</td>
-						<td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>				
-					</tr>
-				</table>
-			</div>
-			
-		</div>
+			<br/>
+		  CYCLE: <input id="cycle_out" type="text" placeholder="none" disabled="disabled" size= 20/>
+
+	        </div>
+
 		</br>
-		<div class="col_6" align="center">
+
+
+		<div class="col_8" align="center">
 			
 			<p><b>MAIN MEMORY</b></p>
 			
-			<div class="col_6" align="center" >
-				<textarea id="mainMemory1" placeholder="EMPTY" style="width:83%; height: 300px" disabled></textarea>
+			<div class="col_4" align="center" >
+				<textarea id="mainMemory1" placeholder="EMPTY" style="width:100%; height: 300px" disabled></textarea>
 			</div>
 			
-			<div class="col_6" align="center">
-				<textarea id="mainMemory2" placeholder="EMPTY" style="width:83%; height: 300px" disabled></textarea>
+			<div class="col_4" align="center">
+				<textarea id="mainMemory2" placeholder="EMPTY" style="width:100%; height: 300px" disabled></textarea>
+			</div>
+
+			<div class="col_4" align="center">
+				<textarea id="mainMemory" placeholder="EMPTY" style="width:100%; height: 300px" disabled></textarea>
 			</div>
 
 		</div>
