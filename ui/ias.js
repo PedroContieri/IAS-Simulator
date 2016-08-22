@@ -328,6 +328,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				reg.pc = reg.mar;
 				reg.ctrl = "left_fetch";
 			}
+		        else {
+			    if (reg.ctrl === "left_execute") {
+				reg.ctrl = "right_fetch";
+			    } else { // we executed an instruction at the right
+				reg.ctrl = "left_fetch";
+			    }
+			}
 		}
 	};
 	instructions[16] = {
@@ -336,6 +343,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			if (reg.ac < POW_OF_2[39]) { // if AC is non negative, we jump
 				reg.pc = reg.mar;
 				reg.ctrl = "right_fetch_RAM";
+			}
+		        else {
+			    if (reg.ctrl === "left_execute") {
+				reg.ctrl = "right_fetch";
+			    } else { // we executed an instruction at the right
+				reg.ctrl = "left_fetch";
+			    }
 			}
 		}
 	};
@@ -454,7 +468,12 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				return mapInstructionNameToOpcode[eliminateWhitespace(val)]
 			},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return instructions[field].name},
+			convertFieldToVal: function(field) {
+			    if (instructions[field] !== undefined) 
+				return instructions[field].name;
+			    else
+				return "???"
+			},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
 
@@ -701,7 +720,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		} else {
 			throw {
 				name: "invalidFetch",
-				message: "Invalid attempt to fetch an instruction during an execute cycle"
+				message: "Invalid attempt to fetch an instruction during an execute cycle. reg.ctrl = "+ reg.ctrl
 			};
 		}
 
@@ -733,7 +752,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		} else { // non existent opcode
 			throw {
 				name: "invalidInstruction",
-				message: "Attempt to execute a non-existent instruction with opcode\n" +
+				message: "Attempt to execute an instruction with invalid opcode\n" +
 					     reg.ir + " at address \n0x" + 
 					     (reg.ctrl === "left_execute" ? reg.pc : reg.pc-1).toString(16).toUpperCase()
 			}; // note: IAS handout says we should increment PC only in the right fetch cycle - hence the check above
@@ -766,7 +785,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		if (register === "ir" || register === "ibr" || register === "pc" || register === "mar") {
 			prop = prop.replace("left", "right"); // user can use 'left' in this case, even though there is only one side
 		}
-		
+	    console.log("prop = "+prop);
 		var attrInfo = validAttributes[prop];
 		if (reg[register] === undefined) { // if there is no such register
 			throw {
@@ -782,6 +801,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 		var word = reg[register];
 		var lsb = register === "ir" ? 0 : attrInfo.lsb; // IR's opcode field actually starts at bit 0
+   	    console.log("Word ("+word+") lsb("+lsb+") numbits("+attrInfo.numbits);
 		return attrInfo.convertFieldToVal(selectBits(word, lsb, attrInfo.numbits)); // return the desired property
 	};
 
