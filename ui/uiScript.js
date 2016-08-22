@@ -330,7 +330,7 @@ var update_UI = function()
   /* Update cycle and dataflow diagram. */
   var dataflow_display = "";
   if(!ftc) {
-    if(ftcstate == "left_fetch"){                    //corrigir a função desta linha
+    if(ftcstate == "left_fetch"){  
       document.getElementById("cycle_out").value = "FETCH LEFT";
       dataflow_display = "ftch_mem";
     } 

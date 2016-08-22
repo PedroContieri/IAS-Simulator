@@ -34,8 +34,8 @@
     
 
     <!-- Memory map Area -->
-    <div class="col_4" align="center" style="margin-top: 20px">
-      <button class= "medium" onclick="loadMem()"><i class="icon-save"></i> Load Mem. Map into IAS Memory </button>
+    <div class="col_4" align="center" style="margin-top: 28px">
+      <button class= "medium pop" onclick="loadMem()"><i class="icon-save"></i> Load Mem. Map into IAS Memory </button>
       <br/><br/>
       <textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 680px" ></textarea>
     </div>
@@ -46,14 +46,14 @@
       
       <!-- Buttons -->
       <div class="col_12" style="margin-top: 20px;">
-        <button class="medium" id="resetbut" onclick="resetAll()"><i class="icon-undo"></i> Reset </button>
-        <button class="medium" type="button" onclick="reboot()" ><i class="icon-upload"></i> Zero Reg/Mem</button>
-        <button class= "medium" id="nextbut" onclick="runNext()"><i class="icon-step-forward"></i> Next </button>
-        <button class= "medium" id="stepbut" onclick="runStep()"><i class="icon-fast-forward"></i> Step </button>
-        <button class= "medium" id="allbut" onclick="runAll()"><i class="icon-play-circle"></i> Run All </button>
+        <button class="medium pop" id="resetbut" onclick="resetAll()"><i class="icon-undo"></i> Reset </button>
+        <button class="medium pop" type="button" onclick="reboot()" ><i class="icon-upload"></i> Zero Reg/Mem</button>
+        <button class= "medium pop" id="nextbut" onclick="runNext()"><i class="icon-step-forward"></i> Next </button>
+        <button class= "medium pop" id="stepbut" onclick="runStep()"><i class="icon-fast-forward"></i> Step </button>
+        <button class= "medium pop" id="allbut" onclick="runAll()"><i class="icon-play-circle"></i> Run All </button>
         <label for="textset"> ms/cycle</label>
         <input onkeypress="return validateNumber(event);" name="textset" id = "speedset" placeholder="1000" type="text" size = "5">
-        <button type="button" class="small blue" onclick="setSpeed()">Set</button>
+        <button type="button pop" class="small blue" onclick="setSpeed()">Set</button>
       </div>
       
     </div>
@@ -71,27 +71,27 @@
 	  </tr></thead>
 	  <tbody><tr>
               <td>PC</td>
-              <td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+              <td><input id="pc_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>AC</td>
-              <td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+              <td><input id="ac_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>MQ</td>
-              <td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+              <td><input id="mq_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>MBR</td>
-              <td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+              <td><input id="mbr_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>IR</td>
-              <td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/>
+              <td><input id="ir_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/>
 		<br/>
-		<input id="op_out" type="text" placeholder="?" disabled="disabled" size= 11/></td>
+		<input id="op_out" type="text" placeholder="?" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>IBR</td>
-              <td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>
+              <td><input id="ibr_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>
 	    </tr><tr>
               <td>MAR</td>
-              <td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 11/></td>        
+              <td><input id="mar_out" type="text" placeholder="0000000000" disabled="disabled" size= 13/></td>        
 	    </tr>
         </table>
       </div>      
@@ -189,7 +189,7 @@
       </svg>
 
       <br/>
-      CYCLE: <input id="cycle_out" type="text" placeholder="none" disabled="disabled" size= 20/>
+      CYCLE: <input id="cycle_out" type="text" placeholder="none" disabled="disabled" size= 15/>
       
     </div>
     

@@ -61,6 +61,7 @@ var resetAll = function()
   IAS.reset();
   end = false;
   ftc = true;
+  window.clearInterval(allRun); 
 };
 
 /* Set the execution run speed. */
@@ -76,11 +77,27 @@ var setSpeed = function()
 /* Reset the system. */
 var reboot = function()
 {
-  // TODO: implement this function. Reset PC to 0 (fetch cycle <= left).
+  IAS.zeroAllRegisters();
+  resetAll();
+  cleanMemoryMap();
   return;
 }
 
-/* TODO: Describe this function. */
+/* Set all memory as zero */
+var cleanMemoryMap = function(){
+	var mmap = "";
+	for(var i = 0; i<1024; i++){
+		if(i<0x10)
+			mmap += "00"
+		if(i<0x100)
+			mmap += "000"
+		
+		mmap += i.toString(16) + " 00 00 00 00 00\n"
+	}
+	 IAS.loadRAM(mmap);
+}
+
+/* Validate numeric entry box */
 var validateNumber = function (event) 
 {
   var key = window.event ? event.keyCode : event.which;
