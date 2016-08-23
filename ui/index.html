@@ -35,9 +35,12 @@
 
     <!-- Memory map Area -->
     <div class="col_4" align="center" style="margin-top: 28px">
-      <button class= "medium pop" onclick="loadMem()"><i class="icon-save"></i> Load Mem. Map into IAS Memory </button>
+      <button class= "medium pop" onclick="loadMapInput()"><i class="icon-save"></i> Load Mem. Map into IAS Memory </button>
       <br/><br/>
-      <textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 680px" ></textarea>
+      <textarea id="memoryMapEntry" placeholder="Enter Memory Map" style="width: 80%; height: 600px" ></textarea>
+	  <br/><br/><br/>
+	  <button class= "medium pop" onclick="loadMapFile()"><i class="icon-upload-alt"></i>  Load Map from File </button>
+	  <input class="file" id="fileload" type="file" style ="font-size: 0.8em; margin-top: 2%"></input>
     </div>
     
     

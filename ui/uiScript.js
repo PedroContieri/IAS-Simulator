@@ -1,17 +1,16 @@
 /* Loads the memory map into the IAS memory */
-var loadMem = function()
+var loadMem = function(txt)
 {
-  var txt = document.getElementById("memoryMapEntry").value;
-  
   // Remove white spaces and comments
   var wdtspace = "";
+ 
   var commark = false;
   for(var i = 0; i < txt.length; i++){
     if(txt.charAt(i) == '#')
       commark = true;
     if(txt.charAt(i) == '\n')
       commark = false;
-      if(txt.charAt(i) != ' ' && !commark && txt.charAt(i) != '\t'){
+      if(txt.charAt(i) != ' ' && !commark && txt.charAt(i) != '\t' && txt.charAt(i) != '\r'){
         wdtspace += txt.charAt(i);
       }
      }
@@ -31,10 +30,33 @@ var loadMem = function()
       }
     }
   }
-
+    
   IAS.loadRAM(map);
   update_UI_mem_boxes();
 };
+
+/* Load from text input */
+var loadMapInput = function()
+{
+  var txt = document.getElementById("memoryMapEntry").value;
+  loadMem(txt);
+}
+
+/* Load from file loader */
+var loadMapFile = function()
+{
+  var reader = new FileReader();
+  var file = document.getElementById("fileload").files[0];
+  var txt = "";
+  
+  reader.onload = function(fileLoadedEvent) {
+    var textFromFileLoaded = fileLoadedEvent.target.result;
+    txt = textFromFileLoaded;
+	loadMem(txt);
+  };
+  
+  reader.readAsText(file, "ISO-8859-1");  
+}
 
 /* Load IAS memory contents into UI memory boxes */
 var update_UI_mem_boxes = function()
