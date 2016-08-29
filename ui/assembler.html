@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Assembler/Diassembler for IAS</title>
+	<script src="ias.js">ias.js has the functionality we need to disassemble IAS instructions</script>
+	<script src="assembler.js"></script>
+	<script>
+		window.onload = function () {
+			document.getElementById("btnAssemble").onclick = function () {
+				var txtA = document.getElementById("txtAssemble");
+				var txtD = document.getElementById("txtDisassemble");
+				try {
+					txtD.value = ASSEMBLER.assemble(txtA.value);
+				} catch (e) {
+					alert("an exception was reported during assembly:\n" +
+                          e.name + "\n" + e.message
+						);
+				}
+			};
+			document.getElementById("btnDisassemble").onclick = function () {
+				var txtA = document.getElementById("txtAssemble");
+				var txtD = document.getElementById("txtDisassemble");
+				IAS.zeroAllRAM();
+				IAS.loadRAM(txtD.value);
+				txtA.value = IAS.objDump();
+			};
+		};
+	</script>
+
+	<style>
+		textarea {
+			overflow: auto;
+			white-space: nowrap;
+		}
+	</style>
+
+</head>
+
+<body>
+
+ <table style="width:100%; height:100%; text-align:center">
+  <tr>
+    <th>Assemble IAS source code into an IAS memory map</th>
+    <th>Diassemble an IAS memory map into IAS source code</th>
+  </tr>
+  <tr style="height:75%">
+    <td><textarea id="txtAssemble" cols="70" rows="30"></textarea></td>
+    <td><textarea id="txtDisassemble" cols="70" rows="30"></textarea></td>
+  </tr>
+  <tr>
+    <td><input type="button" id="btnAssemble" value="Assemble"></td>
+    <td><input type="button" id="btnDisassemble" value="Diassemble"></td>
+  </tr>
+</table> 
+
+
+</body>
+</html>

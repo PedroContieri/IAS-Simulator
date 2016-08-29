@@ -12,6 +12,7 @@ var IAS = (function () { // this module encapsulates the IAS machine and the ass
 	setCPU(register, attribute, value)
 	dumpRAM()
 	dumpCPU()
+	objDump()
 	loadRAM(memory_map)
 
 
@@ -140,6 +141,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	};
 
 
+	var blankinstruction = "(NO INSTRUCTION)    "; // 20 chars wide
 	// all known IAS instructions:
 	var instructions = []
 	instructions[1] = {
@@ -328,11 +330,12 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				reg.pc = reg.mar;
 				reg.ctrl = "left_fetch";
 			}
-		        else {
-			    if (reg.ctrl === "left_execute") {
-				reg.ctrl = "right_fetch";
-			    } else { // we executed an instruction at the right
-				reg.ctrl = "left_fetch";
+			else {
+				if (reg.ctrl === "left_execute") {
+					reg.ctrl = "right_fetch";
+				}
+				else { // we executed an instruction at the right
+					reg.ctrl = "left_fetch";
 			    }
 			}
 		}
@@ -344,11 +347,12 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				reg.pc = reg.mar;
 				reg.ctrl = "right_fetch_RAM";
 			}
-		        else {
-			    if (reg.ctrl === "left_execute") {
-				reg.ctrl = "right_fetch";
-			    } else { // we executed an instruction at the right
-				reg.ctrl = "left_fetch";
+			else {
+		    	if (reg.ctrl === "left_execute") {
+					reg.ctrl = "right_fetch";
+				} 
+				else { // we executed an instruction at the right
+					reg.ctrl = "left_fetch";
 			    }
 			}
 		}
@@ -443,7 +447,14 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				return mapInstructionNameToOpcode[eliminateWhitespace(val)]
 			},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
-			convertFieldToVal: function(field) {return instructions[field].name},
+			convertFieldToVal: function(field) {
+				if (instructions[field] === undefined) {
+					return blankinstruction;
+				}
+				else {
+					return instructions[field].name
+				}
+			},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
 		rightopcode: {
@@ -469,10 +480,12 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			},
 			validObj: {ram:true,ir:true,ibr:true,mbr:true,ac:true,mq:true},
 			convertFieldToVal: function(field) {
-			    if (instructions[field] !== undefined) 
-				return instructions[field].name;
-			    else
-				return "???"
+			    if (instructions[field] === undefined) {
+					return blankinstruction;
+			    }
+			    else {
+					return instructions[field].name;
+			    }
 			},
 			validate: function(val) {return instructions[val] !== undefined ? true : false}
 		},
@@ -536,7 +549,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			validObj: {ram:true,ir:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
 			convertValToField: instructionStringToBinary,
 			convertFieldToVal: function(field) { // obtain the instruction text with the address (if applicable) plugged in
-				return instructions[selectBits(field, 32, 8)].name.replace("X", "0x" + selectBits(field, 20, 12).toString(16).toUpperCase())
+				var opcode = selectBits(field, 12, 8);
+				if (instructions[opcode] === undefined) {
+					return blankinstruction;
+				}
+				else {
+					return instructions[opcode].name.replace("X", "0x" + selectBits(field, 0, 12).toString(16).toUpperCase())
+				}
 			}
 		},
 		rightinstruction: {
@@ -558,7 +577,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			validObj: {ram:true,ir:true,mar:true,pc:true,ibr:true,mbr:true,ac:true,mq:true},
 			convertValToField: instructionStringToBinary,
 			convertFieldToVal: function(field) { // obtain the instruction text with the address (if applicable) plugged in
-				return instructions[selectBits(field, 12, 8)].name.replace("X", "0x" + selectBits(field, 0, 12).toString(16).toUpperCase())
+				var opcode = selectBits(field, 12, 8);
+				if (instructions[opcode] === undefined) {
+					return blankinstruction;
+				}
+				else {
+					return instructions[opcode].name.replace("X", "0x" + selectBits(field, 0, 12).toString(16).toUpperCase())
+				}
 			}
 		},
 
@@ -920,6 +945,72 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		return map;
 	};
 
+	// returns a disassembly of memory into instructions.
+	var objDump = function () {
+		var dump = "# object dump produced by IAS on " + (new Date()).toString() + "\n\n";
+		var ADDRDIGITS = 3; // our address field is 3 digits wide
+		var leftinstruction, rightinstruction;
+		var skipamount = 0; // we skip over repeated values to make the printout more concise
+		var skipvalue; // value of non-instruction word we skipped over last
+
+		for (var i = 0; i < RAM_SIZE; i++) {
+			leftinstruction = getRAM(i, "leftinstructiontext");
+			rightinstruction = getRAM(i, "rightinstructiontext");
+			if (leftinstruction !== blankinstruction && rightinstruction !== blankinstruction) { // if there are valid instruction on both sides
+				if (skipamount === 1) { // one data value to disassemble
+					dump += ".word " + "0x" + skipvalue + "\n";
+				}
+				else if (skipamount > 1) { // many data values to disassemble
+					dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
+				}
+				skipamount = 0;
+				dump += getRAM(i, "leftinstructiontext") + "\n" + getRAM(i, "rightinstructiontext") + "\n";
+			}
+			else if (leftinstruction === blankinstruction && rightinstruction === blankinstruction) { // if there are no valid instructions
+				if (skipamount > 0) { // if previous was not an instruction
+					if (skipvalue === getRAM(i, "wordvaluehex")) { // if same as previous
+						skipamount++;
+					}
+					else { // not the same as previous
+						if (skipamount === 1) { // one data value to disassemble
+							dump += ".word " + "0x" + skipvalue + "\n";
+						}
+						else if (skipamount > 1) { // many data values to disassemble
+							dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
+						}
+						skipamount = 1;
+						skipvalue = getRAM(i, "wordvaluehex");
+					}
+				}
+				else { // previous was an instruction
+					skipamount = 1;
+					skipvalue = getRAM(i, "wordvaluehex");
+				}
+			}
+			else { // if there is one out of two instruction at this word
+				if (skipamount === 1) { // one data value to disassemble
+					dump += ".word " + "0x" + skipvalue + "\n";
+				}
+				else if (skipamount > 1) { // many data values to disassemble
+					dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
+				}
+				skipamount = 0;
+
+				if (leftinstruction === blankinstruction) {
+					dump += ".word " + "0x" + getRAM(i, "wordvaluehex") + " # " +
+					        "0x" + getRAM(i, "leftinstructionhex") + " ; " +
+					        getRAM(i, "rightinstructiontext") + "\n"
+				}
+				else { // halfword on the right is not an instruction
+					dump += ".word " + "0x" + getRAM(i, "wordvaluehex") + " # " +
+					        getRAM(i, "leftinstructiontext") + " ; " +
+					        "0x" + getRAM(i, "rightinstructionhex") + "\n"
+				}
+			}
+		}
+		return dump;
+	};
+
 	// uses a memory map to insert values into RAM
 	// (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
 	var loadRAM = function (map) {
@@ -956,7 +1047,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	return {
 		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
 		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
-		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU, loadRAM: loadRAM
+		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU, loadRAM: loadRAM, objDump: objDump
 	};
 
 	
