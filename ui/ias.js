@@ -946,7 +946,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	};
 
 	// returns a disassembly of memory into instructions.
-	var objDump = function () {
+	var disassemble = function () {
 		var dump = "# object dump produced by IAS on " + (new Date()).toString() + "\n\n";
 		var ADDRDIGITS = 3; // our address field is 3 digits wide
 		var leftinstruction, rightinstruction;
@@ -1047,8 +1047,94 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	return {
 		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
 		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
-		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU, loadRAM: loadRAM, objDump: objDump
+		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU,
+		loadRAM: loadRAM, disassemble: disassemble, testCases: testCases
 	};
 
-	
+	// runs the tests given by testObject on the program given by testObject
+	/* sample test object:
+		[
+			{
+				"input": ["105  00 000 00 3e8",
+						  "106 01 123 45 678"
+						 ],
+				"output": [{"where": "reg", "position": "ac", "value": 31}]
+			},
+			{
+				"input": ["105  00 40506070"],
+				"output": [{"where": "reg", "position": "ac", "value": 32848}]
+			},
+			{
+				"input": ["105  00 000 00 010"],
+				"output": [{"where": "reg", "position": "ac", "value": 16}]
+			},
+			{
+				"input": ["105  00 00 1fA098"],
+				"output": [{"where": "reg", "position": "ac", "value": 1440},
+				           {"where": "ram", "position": 0x212, "value": -3}
+						  ]
+			},
+			{
+				"input": ["105  00 000 00 01b"],
+				"output": [{"where": "ram", "position": 0x3f8, "value": 5}]
+			}
+		]
+	*/ // it'a an array of tests. each test has an "input" attribute, which is an array of strings,
+	   // each of which represents a memory map line to load onto IAS. the other attribute is "output",
+	   // an array of objects with 'where' (ram or reg), 'position' (register name or memory address),
+	   // and 'value' (correct value for the test)
+	var testCases = function (memMap, testObject) {
+		var outputreport = ""; // do each test in turn
+
+		try {
+			testObject = JSON.parse(testObject);
+			var correcttests = 0;
+			for (var i = 0; i < testObject.length; i++) { // for each test
+				var testresults = "--- -- --- -- ---\n" + "Beginning test " + (i+1) + "\n";
+				var testmap = memMap;
+				for (var j = 0; j < testObject[i].input.length; j++) { // for each input line
+					testmap += "\n" + testObject[i].input[j];
+				}
+				IAS.zeroAllRAM();
+				IAS.reset();
+				IAS.loadRAM(testmap);
+				try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
+					IAS.fetch();
+					IAS.execute();
+				} catch (ex) {
+					testresults += "\nIAS execution terminated after firing the following exception:\n"
+						+ "name: " + ex.name + "\nmessage: " + ex.message + "\n";
+					testresults += "\n" + IAS.dumpCPU() + "\n\n";
+					var correct = 0; // how many correct values in this test
+					for (j = 0; j < testObject[i].output.length; j++) { // for each output value to check in this test
+						var checkoutput = testObject[i].output[j], outputvalue;
+						if (checkoutput.where.toLowerCase().indexOf("reg") !== -1) { // if it has a 'reg' in the specification (fault tolerant)
+							outputvalue = IAS.getCPU(checkoutput.position, "wordvalue");
+						} else { // must be RAM
+							outputvalue = IAS.getRAM(parseInt(checkoutput.position), "wordvalue");
+						}
+						if (checkoutput.value == outputvalue) { // if the test passes
+							correct++;
+						}
+						testresults += "\tvalue " + (j+1) + 
+							           ":\tExpected: " + checkoutput.value + "\tActual: " + outputvalue + "\n";
+					}
+					testresults += "\tA total of " + correct + " out of " + testObject[i].output.length +
+					               " values matched for test " + (i+1);
+				}
+				testresults += "\n\n\n";
+				outputreport += testresults;
+			}
+		} catch (e) {
+			throw {
+				name: "misspecifiedTest",
+				message: "failure to load test " + (i+1) + "with the following exception:\n" +
+				"name: " + e.name + "\n" + "message: " + e.message
+			};
+		}
+
+		return outputreport;
+	}
+// and that's all folks
+
 }) (); // initialize IAS, define methods and data structures, and return the public methods

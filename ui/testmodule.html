@@ -11,62 +11,7 @@
 				var txtTO = document.getElementById("txtTestObject");
 				var txtOut = document.getElementById("txtOutputReport");
 
-				/* sample test object:
-				[
-					{
-						"input": ["105  00 000 00 3e8"],
-						"output": [{"where": "reg", "position": "ac", "value": 31}]
-					},
-					{
-						"input": ["105  00 40506070"],
-						"output": [{"where": "reg", "position": "ac", "value": 32848}]
-					},
-					{
-						"input": ["105  00 000 00 010"],
-						"output": [{"where": "reg", "position": "ac", "value": 16}]
-					},
-					{
-						"input": ["105  00 00 1fA098"],
-						"output": [{"where": "reg", "position": "ac", "value": 1440}]
-					},
-					{
-						"input": ["105  00 000 00 01b"],
-						"output": [{"where": "reg", "position": "ac", "value": 5}]
-					}
-				]
-				*/
-
-				try {
-					var testObject = JSON.parse(txtTO.value);
-					txtOut.value = "";
-					for (var i = 0; i < testObject.length; i++) { // for each test
-						txtOut.value += "----\n" + "Beginning test " + (i+1) + "\n";
-						var map = txtMemMap.value;
-						for (var j = 0; j < testObject[i].input.length; j++) { // for each input line
-							map += "\n" + testObject[i].input[j];
-						}
-						IAS.zeroAllRAM();
-						IAS.loadRAM(map);
-						try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
-							IAS.fetch();
-							IAS.execute();
-						} catch (ex) {
-							txtOut.value += "\n" + IAS.dumpCPU() + "\n\n";
-							for (j = 0; j < testObject[i].output.length; j++) { // for each output specification
-								var checkoutput = testObject[i].output[j];
-								if (checkoutput.where === "reg") {
-
-								} else { // RAM
-
-								}
-							}
-
-						}
-
-					}
-				} catch (e) {
-					alert("an exception was generated in the test:\n" + e.name + "\n" + e.message);
-				}
+				txtOut.value = IAS.testCases(txtM.value, txtTO.value);
 				
 			};
 		};
