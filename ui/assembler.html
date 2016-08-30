@@ -6,9 +6,11 @@
 	<script src="assembler.js"></script>
 	<script>
 		window.onload = function () {
+			var txtA = document.getElementById("txtAssemble");
+			var txtD = document.getElementById("txtDisassemble");
+
 			document.getElementById("btnAssemble").onclick = function () {
-				var txtA = document.getElementById("txtAssemble");
-				var txtD = document.getElementById("txtDisassemble");
+				
 				try {
 					txtD.value = ASSEMBLER.assemble(txtA.value);
 				} catch (e) {
@@ -18,11 +20,15 @@
 				}
 			};
 			document.getElementById("btnDisassemble").onclick = function () {
-				var txtA = document.getElementById("txtAssemble");
-				var txtD = document.getElementById("txtDisassemble");
-				IAS.zeroAllRAM();
-				IAS.loadRAM(txtD.value);
-				txtA.value = IAS.objDump();
+				try {
+					IAS.zeroAllRAM();
+					IAS.loadRAM(txtD.value);
+					txtA.value = IAS.disassemble();
+				} catch (e) {
+					alert("an exception was reported during disassembly:\n" +
+                          e.name + "\n" + e.message
+						);
+				}
 			};
 		};
 	</script>

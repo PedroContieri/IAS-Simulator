@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Assembler/Diassembler for IAS</title>
-	<script src="ias.js">ias.js has the functionality we need to disassemble IAS instructions</script>
-	<script src="assembler.js"></script>
+	<title>Test Module Utility for IAS</title>
+	<script src="ias.js"></script>
+	
 	<script>
 		window.onload = function () {
-			document.getElementById("btnTest").onclick = function () {
-				var txtM = document.getElementById("txtMemMap");
-				var txtTO = document.getElementById("txtTestObject");
-				var txtOut = document.getElementById("txtOutputReport");
+			var testObjectExample = document.getElementById("txtTestObject").value;
+			var txtM = document.getElementById("txtMemMap");
+			var txtTO = document.getElementById("txtTestObject");
+			var txtOut = document.getElementById("txtOutputReport");
+			var txtTime = document.getElementById("txtTimeout");
 
-				txtOut.value = IAS.testCases(txtM.value, txtTO.value);
-				
+			document.getElementById("btnResetExameple").onclick = function () {
+				txtTO.value = testObjectExample; // try this for lab 02
+			};
+
+			document.getElementById("btnTest").onclick = function () {
+				txtOut.value = IAS.testCases(txtM.value, txtTO.value, isNaN(txtTime.value) ? undefined : parseInt(txtTime.value));
+				// we specify a per test execution timeout (seconds) if the user enters a number in the corresponding field
 			};
 		};
 	</script>
@@ -35,14 +41,44 @@
 
   <tr style="height:75%">
     <td>
-    	Insert memory map here:
-    	<textarea id="txtMemMap" cols="70" rows="30"></textarea>
+    	Insert memory map here: <!-- just a default examples -->
+    	<textarea id="txtMemMap" cols="70" rows="30">
+000 01 100 0D 400
+
+100 00 000 00 00A
+    	</textarea>
     	<br>
-    	Insert test object here
-    	<textarea id="txtTestObject" cols="70" rows="30"></textarea>
+    	Insert test object here: <!-- just a default examples -->
+    	<textarea id="txtTestObject" cols="70" rows="30">
+[
+	{
+		"input": ["105  00 000 00 3e8"],
+		"output": [{"where": "reg", "position": "ac", "value": 31}]
+	},
+	{
+		"input": ["105  00 40506070"],
+		"output": [{"where": "reg", "position": "ac", "value": 32848}]
+	},
+	{
+		"input": ["105  00 000 00 010"],
+		"output": [{"where": "reg", "position": "ac", "value": 16}]
+	},
+	{
+		"input": ["105  00 00 1fA098"],
+		"output": [{"where": "reg", "position": "ac", "value": 1440}]
+	},
+	{
+		"input": ["105  00 000 00 01b"],
+		"output": [{"where": "ram", "position": "0x3f8", "value": 5}]
+	}
+]
+    	</textarea>
     </td>
     <td rowspan="2">
     	<input type="button" id="btnTest" value="Test &gt;&gt;">
+    	<input type="button" id="btnResetExameple" value="Reset Example Test">
+    	<br>Per Test Execution Timeout (seconds):
+    	<input type="text" id="txtTimeout" value="10">
     </td>
     <td rowspan="2">
 	    Program Execution Report:

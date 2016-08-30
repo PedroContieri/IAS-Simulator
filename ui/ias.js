@@ -12,8 +12,9 @@ var IAS = (function () { // this module encapsulates the IAS machine and the ass
 	setCPU(register, attribute, value)
 	dumpRAM()
 	dumpCPU()
-	objDump()
+	disassemble()
 	loadRAM(memory_map)
+	testCases(memMap, testObject)
 
 
 valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case insensitive.
@@ -592,6 +593,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			validObj: {mbr:true,ac:true,mq:true},
 			convertValToField: function(val) {
 				if (val < 0) { // javascript number could be negative
+					val = -val;
 					val = POW_OF_2[40] - val; // javascript number -> 2's complement
 				}
 				return val;
@@ -599,8 +601,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			convertFieldToVal: function(field) {
 				if (field >= POW_OF_2[39]) { // if the number is negative
 					field = POW_OF_2[40] - field; // then 2's complement it
+					field = -field;
 				}
-				return -field;
+				return field;
 			},
 			validate: function(val) {
 				return (val < POW_OF_2[40] && val >= 0 && val === Math.floor(val)) ? true : false
@@ -907,7 +910,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	// dumps CPU information
 	var dumpCPU = function () {
 		reg.ir = reg.ir * POW_OF_2[12]; // put IR's "opcode field" in place so we can read it
-		var returnstring = "IAS" +
+		var returnstring = "IAS:\n" +
 			   "CTRL: " + reg.ctrl + "\n" +
 			   "IR: " + "0x" + getCPU("IR", "rightopcodehex") + "\t" + getCPU("IR", "rightopcode") + "\t" + getCPU("IR", "rightopcodetext") + "\n" +
 			   "MAR: " + "0x" + getCPU("MAR", "rightaddrhex") + "\t" + getCPU("MAR", "rightaddr") + "\n" +
@@ -1043,21 +1046,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 	};
 
-	// return the public methods:
-	return {
-		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
-		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
-		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU,
-		loadRAM: loadRAM, disassemble: disassemble, testCases: testCases
-	};
 
 	// runs the tests given by testObject on the program given by testObject
 	/* sample test object:
 		[
 			{
 				"input": ["105  00 000 00 3e8",
-						  "106 01 123 45 678"
-						 ],
+						  "106 01 123 45 678"],
 				"output": [{"where": "reg", "position": "ac", "value": 31}]
 			},
 			{
@@ -1071,8 +1066,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			{
 				"input": ["105  00 00 1fA098"],
 				"output": [{"where": "reg", "position": "ac", "value": 1440},
-				           {"where": "ram", "position": 0x212, "value": -3}
-						  ]
+				           {"where": "ram", "position": 0x212, "value": -3}]
 			},
 			{
 				"input": ["105  00 000 00 01b"],
@@ -1083,14 +1077,15 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	   // each of which represents a memory map line to load onto IAS. the other attribute is "output",
 	   // an array of objects with 'where' (ram or reg), 'position' (register name or memory address),
 	   // and 'value' (correct value for the test)
-	var testCases = function (memMap, testObject) {
-		var outputreport = ""; // do each test in turn
+	   // maxtime is an optional argument specifying the timeout interval for each test. default: 10 seconds
+	var testCases = function (memMap, testObject, maxtime) {
+		var outputreport = "# tests executed by IAS on " + (new Date()).toString() + "\n\n"; // do each test in turn
 
 		try {
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
 			for (var i = 0; i < testObject.length; i++) { // for each test
-				var testresults = "--- -- --- -- ---\n" + "Beginning test " + (i+1) + "\n";
+				var testresults = "Beginning test " + (i+1) + "\n";
 				var testmap = memMap;
 				for (var j = 0; j < testObject[i].input.length; j++) { // for each input line
 					testmap += "\n" + testObject[i].input[j];
@@ -1098,10 +1093,20 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				IAS.zeroAllRAM();
 				IAS.reset();
 				IAS.loadRAM(testmap);
+				var timeout;
+				var donewithtest = false;
+				if (maxtime !== undefined) {
+					timeout = setTimeout(function(){donewithtest = true}, maxtime * 1000);
+				}
 				try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
-					IAS.fetch();
-					IAS.execute();
+					while (!donewithtest) { // execute until timeout the program throws the CPU into an invalid state
+						IAS.fetch();
+						IAS.execute();
+					}
 				} catch (ex) {
+					if (maxtime !== undefined) {
+						clearTimeout(timeout);
+					}
 					testresults += "\nIAS execution terminated after firing the following exception:\n"
 						+ "name: " + ex.name + "\nmessage: " + ex.message + "\n";
 					testresults += "\n" + IAS.dumpCPU() + "\n\n";
@@ -1121,9 +1126,21 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 					}
 					testresults += "\tA total of " + correct + " out of " + testObject[i].output.length +
 					               " values matched for test " + (i+1);
+					if (correct === testObject[i].output.length) { // if all the values match
+						correcttests++;
+						testresults += "\nTEST PASSED";
+					} else {
+						testresults += "\nTEST FAILED";
+					}
+					testresults += "\n--- -- --- -- ---" + "\n\n\n";
+					outputreport += testresults;
 				}
-				testresults += "\n\n\n";
-				outputreport += testresults;
+			}
+			outputreport += "\nSUMMARY ---> " + correcttests + " out of " + testObject.length + " tests passed";
+			if (correcttests === testObject.length) { // if all the tests passed
+				outputreport += "\nCONGRATULATIONS! ALL TESTS PASSED";
+			} else {
+				outputreport += "\nNOT ALL TESTS PASSED. PLEASE TRY AGAIN NEXT TIME";
 			}
 		} catch (e) {
 			throw {
@@ -1135,6 +1152,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 
 		return outputreport;
 	}
+	// return the public methods:
+	return {
+		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
+		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
+		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU,
+		loadRAM: loadRAM, disassemble: disassemble, testCases: testCases
+	};
 // and that's all folks
 
 }) (); // initialize IAS, define methods and data structures, and return the public methods
