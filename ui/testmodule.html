@@ -17,8 +17,13 @@
 			};
 
 			document.getElementById("btnTest").onclick = function () {
-				txtOut.value = IAS.testCases(txtM.value, txtTO.value, isNaN(txtTime.value) ? undefined : parseInt(txtTime.value));
+				try {
+					txtOut.value = "";
+					txtOut.value = IAS.testCases(txtM.value, txtTO.value, isNaN(txtTime.value) ? undefined : parseInt(txtTime.value));
 				// we specify a per test execution timeout (seconds) if the user enters a number in the corresponding field
+				} catch(e) {
+					alert(e.name + "\n" + e.message);
+				}
 			};
 		};
 	</script>
@@ -43,33 +48,34 @@
     <td>
     	Insert memory map here: <!-- just a default examples -->
     	<textarea id="txtMemMap" cols="70" rows="30">
-000 01 100 0D 400
+000 01 100 0D 400 # at address zero: LOAD M(0x100) ; JUMP M(0x400) 
+# 0x400 is an invalid address, so this will halt the CPU
 
-100 00 000 00 00A
+100 00 000 00 00A # .word 10
     	</textarea>
     	<br>
     	Insert test object here: <!-- just a default examples -->
     	<textarea id="txtTestObject" cols="70" rows="30">
 [
 	{
-		"input": ["105  00 000 00 3e8"],
-		"output": [{"where": "reg", "position": "ac", "value": 31}]
+		"input":  [{"where": "ram", "position": "0x105", "value": 0}],
+		"output": [{"where": "reg", "position": "ac",    "value": 0}]
 	},
 	{
-		"input": ["105  00 40506070"],
-		"output": [{"where": "reg", "position": "ac", "value": 32848}]
+		"input":  [{"where": "ram", "position": "0x105", "value": 1}],
+		"output": [{"where": "reg", "position": "ac",    "value": 1}]
 	},
 	{
-		"input": ["105  00 000 00 010"],
-		"output": [{"where": "reg", "position": "ac", "value": 16}]
+		"input":  [{"where": "ram", "position": "0x105", "value": 97375}],
+		"output": [{"where": "reg", "position": "ac",    "value": 312}]
 	},
 	{
-		"input": ["105  00 00 1fA098"],
-		"output": [{"where": "reg", "position": "ac", "value": 1440}]
+		"input":  [{"where": "ram", "position": "0x105", "value": 996806}],
+		"output": [{"where": "reg", "position": "ac",    "value": 998}]
 	},
 	{
-		"input": ["105  00 000 00 01b"],
-		"output": [{"where": "ram", "position": "0x3f8", "value": 5}]
+		"input":  [{"where": "ram", "position": "0x105", "value": 34}],
+		"output": [{"where": "reg", "position": "ac",    "value": 5}]
 	}
 ]
     	</textarea>

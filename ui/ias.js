@@ -12,9 +12,8 @@ var IAS = (function () { // this module encapsulates the IAS machine and the ass
 	setCPU(register, attribute, value)
 	dumpRAM()
 	dumpCPU()
-	disassemble()
 	loadRAM(memory_map)
-	testCases(memMap, testObject)
+	testCases(memMap, testObject, maxtimepertest)
 
 
 valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case insensitive.
@@ -419,6 +418,45 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 	}
 
+		// takes an IAS instruction in text and transforms it to binary form
+	var instructionStringToBinary = function(val) {
+		var instructiontext = val;
+		// we can accept instructions like "JUMPM(0,0:19)". i don't think anyone will call the parsing police on us
+		val = eliminateWhitespace(val); 
+		// which instruction does this val match?
+		var i, opcode, addr, foundInstruction = false;
+		for (i in instructionPatterns) {
+			if (instructionPatterns.hasOwnProperty(i)) { // for each instruction
+				var m = instructionPatterns[i].exec(val);
+				if (m !== null) { // if we have a match for instruction i
+					addr = m[1]; // we captured the instruction address in the regexp
+					foundInstruction = true;
+					break;
+				}
+			}
+		}
+		if (foundInstruction === false) { // if there is match for the given string
+			throw {
+				name: "invalidInstructionString",
+				message: instructiontext + "\nis not a valid IAS instruction"
+			};
+		}
+		if (addr === undefined) { // if no address was given (since it wasn't required)
+			addr = 0; // just keep it zeroed as default
+		} else {
+			addr = parseInt(addr, 16);
+		}
+		if (addr >= RAM_SIZE) {
+			throw {
+				name: "invalidInstructionAddress",
+				message: instructiontext + " is an instruction with an invalid address"
+			};
+		}
+		opcode = instructions[i];
+
+		return opcode * POW_OF_2[12] + addr;
+	};
+
 	// valid attributes to use for IAS/memory queries (getRAM, getCPU) 
 	// and insertions (setRAM, setCPU)
 	// "val" refers to (javascript format) number, hex string, or instruction string which is user input.
@@ -623,47 +661,6 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 
 	};
-
-
-	// takes an IAS instruction in text and transforms it to binary form
-	var instructionStringToBinary = function(val) {
-		var instructiontext = val;
-		// we can accept instructions like "JUMPM(0,0:19)". i don't think anyone will call the parsing police on us
-		val = eliminateWhitespace(val); 
-		// which instruction does this val match?
-		var i, opcode, addr, foundInstruction = false;
-		for (i in instructionPatterns) {
-			if (instructionPatterns.hasOwnProperty(i)) { // for each instruction
-				var m = instructionPatterns[i].exec(val);
-				if (m !== null) { // if we have a match for instruction i
-					addr = m[1]; // we captured the instruction address in the regexp
-					foundInstruction = true;
-					break;
-				}
-			}
-		}
-		if (foundInstruction === false) { // if there is match for the given string
-			throw {
-				name: "invalidInstructionString",
-				message: instructiontext + "\nis not a valid IAS instruction"
-			};
-		}
-		if (addr === undefined) { // if no address was given (since it wasn't required)
-			addr = 0; // just keep it zeroed as default
-		} else {
-			addr = parseInt(addr, 16);
-		}
-		if (addr >= RAM_SIZE) {
-			throw {
-				name: "invalidInstructionAddress",
-				message: instructiontext + " is an instruction with an invalid address"
-			};
-		}
-		opcode = instructions[i];
-
-		return opcode * POW_OF_2[12] + addr;
-	};
-
 
 	/*
 	// returns an object with all possible attributes of a 40 bit word. NOT ACTUALLY USED
@@ -948,87 +945,19 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		return map;
 	};
 
-	// returns a disassembly of memory into instructions.
-	var disassemble = function () {
-		var dump = "# object dump produced by IAS on " + (new Date()).toString() + "\n\n";
-		var ADDRDIGITS = 3; // our address field is 3 digits wide
-		var leftinstruction, rightinstruction;
-		var skipamount = 0; // we skip over repeated values to make the printout more concise
-		var skipvalue; // value of non-instruction word we skipped over last
-
-		for (var i = 0; i < RAM_SIZE; i++) {
-			leftinstruction = getRAM(i, "leftinstructiontext");
-			rightinstruction = getRAM(i, "rightinstructiontext");
-			if (leftinstruction !== blankinstruction && rightinstruction !== blankinstruction) { // if there are valid instruction on both sides
-				if (skipamount === 1) { // one data value to disassemble
-					dump += ".word " + "0x" + skipvalue + "\n";
-				}
-				else if (skipamount > 1) { // many data values to disassemble
-					dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
-				}
-				skipamount = 0;
-				dump += getRAM(i, "leftinstructiontext") + "\n" + getRAM(i, "rightinstructiontext") + "\n";
-			}
-			else if (leftinstruction === blankinstruction && rightinstruction === blankinstruction) { // if there are no valid instructions
-				if (skipamount > 0) { // if previous was not an instruction
-					if (skipvalue === getRAM(i, "wordvaluehex")) { // if same as previous
-						skipamount++;
-					}
-					else { // not the same as previous
-						if (skipamount === 1) { // one data value to disassemble
-							dump += ".word " + "0x" + skipvalue + "\n";
-						}
-						else if (skipamount > 1) { // many data values to disassemble
-							dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
-						}
-						skipamount = 1;
-						skipvalue = getRAM(i, "wordvaluehex");
-					}
-				}
-				else { // previous was an instruction
-					skipamount = 1;
-					skipvalue = getRAM(i, "wordvaluehex");
-				}
-			}
-			else { // if there is one out of two instruction at this word
-				if (skipamount === 1) { // one data value to disassemble
-					dump += ".word " + "0x" + skipvalue + "\n";
-				}
-				else if (skipamount > 1) { // many data values to disassemble
-					dump += ".wfill " + skipamount + ", " + "0x" + skipvalue + "\n";
-				}
-				skipamount = 0;
-
-				if (leftinstruction === blankinstruction) {
-					dump += ".word " + "0x" + getRAM(i, "wordvaluehex") + " # " +
-					        "0x" + getRAM(i, "leftinstructionhex") + " ; " +
-					        getRAM(i, "rightinstructiontext") + "\n"
-				}
-				else { // halfword on the right is not an instruction
-					dump += ".word " + "0x" + getRAM(i, "wordvaluehex") + " # " +
-					        getRAM(i, "leftinstructiontext") + " ; " +
-					        "0x" + getRAM(i, "rightinstructionhex") + "\n"
-				}
-			}
-		}
-		return dump;
-	};
 
 	// uses a memory map to insert values into RAM
 	// (i.e. 000 ab cd ef 01 02\n 001 cc dd ee ff aa\n ...etc...)
 	var loadRAM = function (map) {
 		var lines = map.split("\n"); // process each line corresponding to a word in memory
 		
-		// represents a line with data/instructions: an address followed by hex numbers. 
-		// whitespace only mandatory for separating the address and the memory value
-		var linepattern = /^[\s]*([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*)$/i; 
+		// represents a line with data/instructions: a hex address followed by hex numbers. 
+		// whitespace only mandatory for separating the address and the memory value. comments optional. numbers optional.
+		var linepattern = /^\s*(?:([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*))?\s*(?:#.*)?$/i; 
 		
-		var whitespace = /[\s]/g; // represents a single whitespace
-		var whitespaceonly = /^[\s]*$/; // represents a whitespace only string (possibly empty)
+		var whitespace = /\s/g; // represents a single whitespace
+		var whitespaceonly = /^\s*$/; // represents a whitespace only string (possibly empty)
 		for (var i = 0; i < lines.length; i++) {
-			if (whitespaceonly.test(lines[i])) {
-				continue; // nothing to be parsed on this line
-			}
 			var m = lines[i].match(linepattern); // capture 1: line addr. capture 2: number (with possible whitespace interspersed)
 			if (m === null) { // if the line does match our pattern
 				throw {
@@ -1037,6 +966,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 					         "<address> <number> [#comment]" + "\n" +
 					         ", where <number> may have any amount of whitespaces, and comments are optional"
 				};
+			}
+			if (!m[1]) { // if we didn't capture a numerical memory map entry
+				continue; // nothing to be parsed on this line
 			}
 			var addr = parseInt(m[1], 16); // capture group 1 is the line address
 			var number = parseInt(m[2].replace(whitespace, ""), 16); // eliminate whitespace
@@ -1086,29 +1018,42 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			var correcttests = 0;
 			for (var i = 0; i < testObject.length; i++) { // for each test
 				var testresults = "Beginning test " + (i+1) + "\n";
-				var testmap = memMap;
+				/*var testmap = memMap;
 				for (var j = 0; j < testObject[i].input.length; j++) { // for each input line
 					testmap += "\n" + testObject[i].input[j];
-				}
+				}*/
 				IAS.zeroAllRAM();
 				IAS.reset();
-				IAS.loadRAM(testmap);
+				IAS.loadRAM(memMap);
+				for (var j = 0; j < testObject[i].input.length; j++) { // for each input to the test
+					var processinput = testObject[i].input[j], outputvalue;
+					if (processinput.where.toLowerCase().indexOf("reg") !== -1) { // if it has a 'reg' in the specification (fault tolerant)
+						IAS.setCPU(processinput.position, "wordvalue", processinput.value);
+					} else { // must be RAM
+						IAS.setRAM(parseInt(processinput.position), "wordvalue", processinput.value);
+					}
+				}
 				var timeout;
-				var donewithtest = false;
-				if (maxtime !== undefined) {
-					timeout = setTimeout(function(){donewithtest = true}, maxtime * 1000);
+				var testtimedout = false;
+				if (maxtime) { // if the user specifies a timeout
+					timeout = setTimeout(function(){testtimedout = true}, maxtime * 1000);
 				}
 				try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
-					while (!donewithtest) { // execute until timeout the program throws the CPU into an invalid state
+					while (!testtimedout) { // execute until timeout the program throws the CPU into an invalid state
 						IAS.fetch();
 						IAS.execute();
 					}
-				} catch (ex) {
-					if (maxtime !== undefined) {
+				} catch (ex) { // program is done
+					if (maxtime && !testtimedout) { // cancel the timeout
 						clearTimeout(timeout);
 					}
-					testresults += "\nIAS execution terminated after firing the following exception:\n"
-						+ "name: " + ex.name + "\nmessage: " + ex.message + "\n";
+					if (testtimedout) {
+						testresults += "\nIAS execution halted after a specified timeout of " + (maxtime*1000) + " seconds\n";
+					}
+					else { // program halted via CPU exception
+						testresults += "\nIAS execution terminated after firing the following exception:\n"
+							+ "name: " + ex.name + "\nmessage: " + ex.message + "\n";
+					}
 					testresults += "\n" + IAS.dumpCPU() + "\n\n";
 					var correct = 0; // how many correct values in this test
 					for (j = 0; j < testObject[i].output.length; j++) { // for each output value to check in this test
@@ -1121,10 +1066,10 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 						if (checkoutput.value == outputvalue) { // if the test passes
 							correct++;
 						}
-						testresults += "\tvalue " + (j+1) + 
-							           ":\tExpected: " + checkoutput.value + "\tActual: " + outputvalue + "\n";
+						testresults += "\tTest " + (i+1) + ", Value " + (j+1) + 
+							           ":\tExpected: " + checkoutput.value + "\tActual: " + outputvalue + "\n\n\n";
 					}
-					testresults += "\tA total of " + correct + " out of " + testObject[i].output.length +
+					testresults += "A total of " + correct + " out of " + testObject[i].output.length +
 					               " values matched for test " + (i+1);
 					if (correct === testObject[i].output.length) { // if all the values match
 						correcttests++;
@@ -1157,7 +1102,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		reset: reset, zeroAllRegisters: zeroAllRegisters, zeroAllRAM: zeroAllRAM,
 		fetch: fetch, execute: execute, getRAM: getRAM, setRAM: setRAM,
 		getCPU: getCPU, setCPU: setCPU, dumpRAM: dumpRAM, dumpCPU: dumpCPU,
-		loadRAM: loadRAM, disassemble: disassemble, testCases: testCases
+		loadRAM: loadRAM, testCases: testCases
 	};
 // and that's all folks
 

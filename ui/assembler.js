@@ -1,6 +1,6 @@
 var ASSEMBLER = (function () {
 
-	// utilities
+	// utilities // some code (up to the end of the instructions array) was directly reused from the IAS module
 
 	// return value's "bits" from lsb to lsb+numbits-1 (convention: lsb 0)
 	// bits requested should be in range 0-39
@@ -17,6 +17,17 @@ var ASSEMBLER = (function () {
 		return result + str;
 	}
 
+	// make sure num is an integer in the appropriate range
+	var validateNumRange = function (num, range) { // defensive debugging
+		if (num < 0 || num >= range || num !== Math.floor(num)) {
+			throw {
+				name: "invalidNumber",
+				message: "Attempt to use a number that's not an integer out of bounds:\n" +
+				         num + "\nnot in range [0, " + range + ")"
+			};
+		}
+	}
+
 	var POW_OF_2 = []; // unfortunately we can't rely on bitwise ops (they convert to 32 bit integer)
 	for (i = 0, p = 1; i <= 40; i++, p *= 2) {
 		POW_OF_2[i] = p;
@@ -27,6 +38,7 @@ var ASSEMBLER = (function () {
 	// this is a numeric value that can be used in the address field: 
 	// (0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)
 
+	var blankinstruction = "(NO INSTRUCTION)    "; // 20 chars wide
 	// all known IAS instructions
 	var instructions = [];
 	instructions[1] = {
@@ -221,6 +233,7 @@ var ASSEMBLER = (function () {
 
 		var linesOfCode = src.split("\n");
 		for (var i = 0; i < linesOfCode.length; i++) { // for each line in the source stream, do:
+
 			var lineMatch = null, j; // line match, and index j of the line pattern matched
 			for (j = 0; j < linePatterns.length; j++) { // which type of source line is it?
 				lineMatch = linePatterns[j].pattern.exec(linesOfCode[i]);
@@ -235,6 +248,7 @@ var ASSEMBLER = (function () {
 					         linesOfCode[i] + "\n" + "is not a valid IAS assembler directive or instruction"
 				};
 			}
+
 			// helper functions and memory assemble functions
 			var validateNumberToken = function (number) {
 				if (number >= POW_OF_2[40]) {
@@ -392,6 +406,7 @@ var ASSEMBLER = (function () {
 									value: addrfield, // value of the label will be inserted later at this address
 									length: ADDRLENGTH
 								};
+								addrfield = 0; // the instruction will be stitched up at the end
 							}
 						}
 						else { // it must be a hexadecimal address
@@ -460,8 +475,146 @@ var ASSEMBLER = (function () {
 		return memMap;
 	};
 
+	// converts a memory map into disassembled form
+	// if fillwithzeroes (optional arg) is true, it fills the gaps of the memory map with zeroes
+	var disassemble = function (map, fillwithzeroes) {
+
+		// set of memory words that are explicitly set in the memory map,
+		// with addr attribute (key), left opcode, left addr, right opcode, right addr
+		var mem = []; // set of values that are explicitly set in the memory map
+
+		var lines = map.split("\n"); // process each line corresponding to a word in memory
+		
+		// represents a line with data/instructions: a hex address followed by hex numbers. 
+		// whitespace only mandatory for separating the address and the memory value. comments optional.
+		var linepattern = /^\s*(?:([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*))?\s*(?:#.*)?$/i; 
+		
+		var whitespace = /\s/g; // represents a single whitespace
+		var whitespaceonly = /^\s*$/; // represents a whitespace only string (possibly empty)
+		for (var i = 0; i < lines.length; i++) {
+			var m = lines[i].match(linepattern); // capture 1: line addr. capture 2: number (with possible whitespace interspersed)
+			if (m === null) { // if the line does match our pattern
+				throw {
+					name: "invalidMap",
+					message: "Line " + (i+1) + " of the memory map is not in the valid format:\n" +
+					         "<address> <number> [#comment]" + "\n" +
+					         ", where <number> may have any amount of whitespaces, and comments are optional"
+				};
+			}
+			if (!m[1]) { // if we didn't capture a numerical memory map entry
+				continue; // there is nothing to be parsed on this line
+			}
+			var word = {}; // info about data to be disassembled, indexed by address
+			word.addr = parseInt(m[1], 16); // capture group 1 is the memory address
+			
+			word.value = parseInt(m[2].replace(whitespace, ""), 16); // capture 2: memory value. eliminate whitespace
+			validateNumRange(word.value, POW_OF_2[40]);
+			
+			var leftopcode = selectBits(word.value, 32, 8);
+			var rightopcode = selectBits(word.value, 12, 8);
+			var leftaddr = selectBits(word.value, 20, 12).toString(16).toUpperCase();
+			var rightaddr = selectBits(word.value, 0, 12).toString(16).toUpperCase();
+			if (instructions[leftopcode] === undefined) {
+				word.leftinstructiontext = blankinstruction;
+				if (instructions[rightopcode] === undefined) {
+					word.rightinstructiontext = blankinstruction;
+					word.type = "pure data";
+				} else { // we do have an instruction on the right
+					word.rightinstructiontext = instructions[rightopcode].name.replace("X", "0x" + rightaddr);
+					word.type = "only instruction on the right"; // literate programming!
+				}
+			}
+			else { // we do have an instruction on the left
+				word.leftinstructiontext = instructions[leftopcode].name.replace("X", "0x" + leftaddr);
+				if (instructions[rightopcode] === undefined) {
+					word.rightinstructiontext = blankinstruction;
+					word.type = "only instruction on the left";
+				} else { // we do have an instruction on the right
+					word.rightinstructiontext = instructions[rightopcode].name.replace("X", "0x" + rightaddr);
+					word.type = "pure instruction";
+				}
+			}
+			mem.push(word);
+		}
+
+		mem.sort(function (word1, word2) {
+			if (word1.addr < word2.addr) return -1;
+			else if (word1.addr > word2.addr) return 1;
+			else return 0; // equality
+		});
+
+		var disassembly = "";
+
+		//var mode = "instruction"; // or "data"
+		var lastdata, lastdataaddr = -1;
+		//var lastassembly, lastassemblyaddr = -1
+		var datavaluerepeatcount = 0; // previous one was an instruction
+		for (var i = 0; i < mem.length; i++) { // for each line in the memory map, in order of increasing addresses:
+			var line = "";
+
+			var reachedaninstruction = function () { // LP in IAS: the great american novel
+				return mem[i].type !== "pure data" ? true : false
+			};
+			var crossedagap = function () {
+				return mem[i].addr - lastdataaddr > 1 ? true : false;
+			};
+			var differentvaluereached = function () {
+				return mem[i].value !== lastdata ? true : false;
+			}
+
+			if (datavaluerepeatcount > 1 && (reachedaninstruction() || crossedagap() || differentvaluereached())) {
+				line += ".wfill " + datavaluerepeatcount + ", " + lastdata + "\n";
+			} // fill a sequence of equal, consecutive values in memory
+
+			if (datavaluerepeatcount === 1 && (reachedaninstruction() || crossedagap() || differentvaluereached())) {
+				line += ".word " + lastdata + "\n";
+			} // insert a singleton data value into memory
+
+			if (crossedagap()) {
+				if (fillwithzeroes) {
+					line += ".wfill " + (mem[i].addr - lastdataaddr) + ", 0 " + "# gap in memory map\n";
+				} else { // just skip and leave the gap undefined
+					line += ".org " + "0x" + mem[i].addr.toString(16).toUpperCase() + " # gap from " + lastdataaddr.toString(16).toUpperCase() + " to " + mem[i].addr.toString(16).toUpperCase() + "\n";
+				}
+			}
+
+			if (datavaluerepeatcount > 0 && mem[i].value === lastdata && !crossedagap()) {
+				// if this is some consecutive sequence of equal values
+				datavaluerepeatcount++;
+			} else {
+				if (mem[i].type === "pure instruction") {
+					datavaluerepeatcount = 0;
+					line += mem[i].leftinstructiontext + "\n" + mem[i].rightinstructiontext + "\n";
+				} else if (mem[i].type === "only instruction on the left") {
+					datavaluerepeatcount = 0;
+					line += ".word " + "0x" + mem[i].value.toString(16).toUpperCase() + " # " + mem[i].leftinstructiontext + " ; " + "0x" + selectBits(mem[i].value, 12, 8).toString(16) + " " + "0x" + selectBits(mem[i].value, 0, 12).toString(16).toUpperCase() + "\n"
+				} else if (mem[i].type === "only instruction on the right") {
+					datavaluerepeatcount = 0;
+					line += ".word " + "0x" + mem[i].value.toString(16).toUpperCase() + " # " + "0x" + selectBits(mem[i].value, 32, 8).toString(16).toUpperCase() + " " + "0x" + selectBits(mem[i].value, 20, 12).toString(16).toUpperCase() + " ; " + mem[i].rightinstructiontext + "\n"
+				} else if (mem[i].type === "pure data") {
+					datavaluerepeatcount = 1;
+				}
+			}
+
+			lastdata = mem[i].value;
+			lastdataaddr = mem[i].addr;
+
+			if (line) {
+				disassembly += line;
+			}
+		}
+		// is there a .data or .wfill to finish up here?
+		if (datavaluerepeatcount === 1) { // must insert a .word
+			disassembly += ".word " + lastdata + "\n";
+		} else if (datavaluerepeatcount > 1) { // must insert a .wfill
+			disassembly += ".wfill " + datavaluerepeatcount + ", " + lastdata + "\n";
+		}
+
+		return disassembly;
+	};
+
 	return { // return the public methods
-		assemble: assemble
-	}
+		assemble: assemble, disassemble: disassemble
+	};
 
 }) (); // initialize the assembler machine and return the public methods
