@@ -1,42 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Test Module Utility for IAS</title>
-	<script src="ias.js"></script>
-	
-	<script>
-		window.onload = function () {
-			var testObjectExample = document.getElementById("txtTestObject").value;
-			var txtM = document.getElementById("txtMemMap");
-			var txtTO = document.getElementById("txtTestObject");
-			var txtOut = document.getElementById("txtOutputReport");
-			var txtTime = document.getElementById("txtTimeout");
+  <title>Test Module Utility for IAS</title>
+  <script src="ias.js"></script>
+  
+  <script>
+    window.onload = function () {
+      var testObjectExample = document.getElementById("txtTestObject").value;
+      var txtM = document.getElementById("txtMemMap");
+      var txtTO = document.getElementById("txtTestObject");
+      var txtOut = document.getElementById("txtOutputReport");
+      var txtTime = document.getElementById("txtTimeout");
+    
+      document.getElementById("btnResetExameple").onclick = function () {
+        txtTO.value = testObjectExample; // try this for lab 02
+      };
+    
+      document.getElementById("btnTest").onclick = function () {
+        try {
+          txtOut.value = "";
+          txtOut.value = IAS.testCases(txtM.value, txtTO.value, isNaN(txtTime.value) ? undefined : parseInt(txtTime.value));
+          // we specify a per test execution timeout (seconds) if the user enters a number in the corresponding field
+        } 
+        catch(e) {
+          alert(e.name + "\n" + e.message);
+        }
+      };
+    };
+  </script>
 
-			document.getElementById("btnResetExameple").onclick = function () {
-				txtTO.value = testObjectExample; // try this for lab 02
-			};
-
-			document.getElementById("btnTest").onclick = function () {
-				try {
-					txtOut.value = "";
-					txtOut.value = IAS.testCases(txtM.value, txtTO.value, isNaN(txtTime.value) ? undefined : parseInt(txtTime.value));
-				// we specify a per test execution timeout (seconds) if the user enters a number in the corresponding field
-				} catch(e) {
-					alert(e.name + "\n" + e.message);
-				}
-			};
-		};
-	</script>
-
-	<style>
-		textarea {
-			overflow: auto;
-			white-space: nowrap;
-		}
-		td {
-			text-align: center;
-		}
-	</style>
+  <style>
+    textarea {
+      overflow: auto;
+      white-space: nowrap;
+    }
+    td {
+      text-align: center;
+    }
+  </style>
 
 </head>
 
@@ -44,56 +45,30 @@
 
  <table style="width:100%; height:100%;">
 
-  <tr style="height:75%">
-    <td>
-    	Insert memory map here: <!-- just a default examples -->
-    	<textarea id="txtMemMap" cols="70" rows="30">
-000 01 100 0D 400 # at address zero: LOAD M(0x100) ; JUMP M(0x400) 
-# 0x400 is an invalid address, so this will halt the CPU
-
-100 00 000 00 00A # .word 10
-    	</textarea>
-    	<br>
-    	Insert test object here: <!-- just a default examples -->
-    	<textarea id="txtTestObject" cols="70" rows="30">
-[
-	{
-		"input":  [{"where": "ram", "position": "0x105", "value": 0}],
-		"output": [{"where": "reg", "position": "ac",    "value": 0}]
-	},
-	{
-		"input":  [{"where": "ram", "position": "0x105", "value": 1}],
-		"output": [{"where": "reg", "position": "ac",    "value": 1}]
-	},
-	{
-		"input":  [{"where": "ram", "position": "0x105", "value": 97375}],
-		"output": [{"where": "reg", "position": "ac",    "value": 312}]
-	},
-	{
-		"input":  [{"where": "ram", "position": "0x105", "value": 996806}],
-		"output": [{"where": "reg", "position": "ac",    "value": 998}]
-	},
-	{
-		"input":  [{"where": "ram", "position": "0x105", "value": 34}],
-		"output": [{"where": "reg", "position": "ac",    "value": 5}]
-	}
-]
-    	</textarea>
-    </td>
-    <td rowspan="2">
-    	<input type="button" id="btnTest" value="Test &gt;&gt;">
-    	<input type="button" id="btnResetExameple" value="Reset Example Test">
-    	<br>Per Test Execution Timeout (seconds):
-    	<input type="text" id="txtTimeout" value="10">
-    </td>
-    <td rowspan="2">
-	    Program Execution Report:
-	    <textarea id="txtOutputReport" cols="70" rows="70"></textarea>
-    </td>
-  </tr>
-
-</table> 
-
+   <tr style="height:75%">
+     <td>
+       Memory map: <!-- just a default examples -->
+       <textarea id="txtMemMap" cols="70" rows="30">
+	 # Insert your memory map here
+       </textarea>
+       <br>
+       Test object: <!-- just a default examples -->
+       <textarea id="txtTestObject" cols="70" rows="30">
+       </textarea>
+     </td>
+     <td rowspan="2">
+       <input type="button" id="btnTest" value="Test &gt;&gt;">
+       <input type="button" id="btnResetExameple" value="Reset Example Test">
+       <br>Per Test Execution Timeout (seconds):
+       <input type="text" id="txtTimeout" value="10">
+     </td>
+     <td rowspan="2">
+       Program Execution Report:
+       <textarea id="txtOutputReport" cols="70" rows="70"></textarea>
+     </td>
+   </tr>
+   
+ </table> 
 
 </body>
 </html>
