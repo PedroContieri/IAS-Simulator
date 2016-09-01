@@ -1014,6 +1014,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		var outputreport = "# tests executed by IAS on " + (new Date()).toString() + "\n\n"; // do each test in turn
 
 		try {
+			
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
 			for (var i = 0; i < testObject.length; i++) { // for each test
@@ -1028,9 +1029,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 				for (var j = 0; j < testObject[i].input.length; j++) { // for each input to the test
 					var processinput = testObject[i].input[j], outputvalue;
 					if (processinput.where.toLowerCase().indexOf("reg") !== -1) { // if it has a 'reg' in the specification (fault tolerant)
-						IAS.setCPU(processinput.position, "wordvalue", processinput.value);
+						IAS.setCPU(processinput.position, "wordvalue", parseInt(processinput.value));
 					} else { // must be RAM
-						IAS.setRAM(parseInt(processinput.position), "wordvalue", processinput.value);
+						IAS.setRAM(parseInt(processinput.position), "wordvalue", parseInt(processinput.value));
 					}
 				}
 				var timeout;
@@ -1063,7 +1064,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 						} else { // must be RAM
 							outputvalue = IAS.getRAM(parseInt(checkoutput.position), "wordvalue");
 						}
-						if (checkoutput.value == outputvalue) { // if the test passes
+						if (parseInt(checkoutput.value) == outputvalue) { // if the test passes
 							correct++;
 						}
 						testresults += "\tTest " + (i+1) + ", Value " + (j+1) + 
