@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test Module Utility for IAS</title>
+  <!-- META -->
+  <title>IAS Simulator - Test Module Utility</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" type="text/css" href="HTML-KickStart-master/css/kickstart.css" media="all" />
+  <link rel="stylesheet" type="text/css" href="HTML-KickStart-master/style.css" media="all" /> 
+  
+  <!-- Javascript -->
   <script src="ias.js"></script>
   
   <script>
@@ -43,10 +53,25 @@
 
 <body>
 
- <table style="width:100%; height:100%;">
+<div class="grid">
+  
+  <!-- Page top -->
+  <div class="col_12 callout" style="margin-top:20px;">
+    <h2 style="margin: 10px 20px 10px 20px" align="left" >IAS Simulator - Test Module Utility - V 1.0.0</h2>
+  </div>
+  
+  <!-- Page body -->
+  <div class="col_12" style="background: #FFFFFF; margin-top: -0.5em; margin-bottom: 20px">
 
-   <tr style="height:75%">
-     <td>
+    <div class="col_12" align="center" style="margin-top: 28px">
+      <input type="button" id="btnTest" value="Run Test!">
+      <input type="button" id="btnResetExameple" value="Reset Example Test">
+      Per Test Execution Timeout:
+      <input type="text" id="txtTimeout" value="10"> seconds
+    </div>
+
+    <!-- Memory map / test vector Area -->
+    <div class="col_6" align="center" style="margin-top: 28px">
        Memory map: <!-- just a default examples -->
        <textarea id="txtMemMap" cols="70" rows="30">
 	 # Insert your memory map here
@@ -55,20 +80,15 @@
        Test object: <!-- just a default examples -->
        <textarea id="txtTestObject" cols="70" rows="30">
        </textarea>
-     </td>
-     <td rowspan="2">
-       <input type="button" id="btnTest" value="Test &gt;&gt;">
-       <input type="button" id="btnResetExameple" value="Reset Example Test">
-       <br>Per Test Execution Timeout (seconds):
-       <input type="text" id="txtTimeout" value="10">
-     </td>
-     <td rowspan="2">
+    </div>
+
+    <!-- Control panel / Execution report -->
+    <div class="col_6" align="center" style="margin-top: 28px">
        Program Execution Report:
-       <textarea id="txtOutputReport" cols="70" rows="70"></textarea>
-     </td>
-   </tr>
-   
- </table> 
+       <textarea id="txtOutputReport" style="width:100%; height: 400px"></textarea>
+    </div>
+
+  </div>
 
 </body>
 </html>
