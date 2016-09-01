@@ -85,16 +85,8 @@ var reboot = function()
 
 /* Set all memory as zero */
 var cleanMemoryMap = function(){
-	var mmap = "";
-	for(var i = 0; i<1024; i++){
-		if(i<0x10)
-			mmap += "00"
-		if(i<0x100)
-			mmap += "000"
-		
-		mmap += i.toString(16) + " 00 00 00 00 00\n"
-	}
-	 IAS.loadRAM(mmap);
+	// IAS provides a shortcut
+	IAS.zeroAllRAM();
 }
 
 /* Validate numeric entry box */

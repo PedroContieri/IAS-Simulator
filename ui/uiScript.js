@@ -1,37 +1,11 @@
 /* Loads the memory map into the IAS memory */
 var loadMem = function(txt)
 {
-  // Remove white spaces and comments
-  var wdtspace = "";
- 
-  var commark = false;
-  for(var i = 0; i < txt.length; i++){
-    if(txt.charAt(i) == '#')
-      commark = true;
-    if(txt.charAt(i) == '\n')
-      commark = false;
-      if(txt.charAt(i) != ' ' && !commark && txt.charAt(i) != '\t' && txt.charAt(i) != '\r'){
-        wdtspace += txt.charAt(i);
-      }
-     }
-     wdtspace = wdtspace.toUpperCase();
-  
-  // Formating the map
-  var map ="", j=0;
-  for(var i = 0; i < wdtspace.length; i++){
-    if(wdtspace.charAt(i) != '\n'){
-      if(j === 3 || j === 5 || j === 7 || j === 9 || j === 11)
-        map += " ";
-      map += wdtspace.charAt(i);
-      j++;
-      if(j>12){
-        j=0;
-        map += '\n';
-      }
-    }
-  }
-    
-  IAS.loadRAM(map);
+  // NOTE: loadRAM already does all the text processing, removing comments, whitespace, etc.
+  // only requirement is that 
+  // 1. there be whitespace between the word address and the word content(s), and
+  // 2. there be zero or 1 word per line. Formatting of the word content itself is free. The content is read as a single number.
+  IAS.loadRAM(txt);
   update_UI_mem_boxes();
 };
 
@@ -55,7 +29,7 @@ var loadMapFile = function()
 	loadMem(txt);
   };
   
-  reader.readAsText(file, "ISO-8859-1");  
+  reader.readAsText(file, "ISO-8859-1"); // "latin 1"? maybe UTF-8 is preferable?
 }
 
 /* Load IAS memory contents into UI memory boxes */

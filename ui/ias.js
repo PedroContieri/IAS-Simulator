@@ -360,9 +360,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	instructions[18] = {
 		name: "STOR M(X,8:19)",
 		execute: function () {
-			// replace address field of left instruction in memory by corresponding field of AC
+			// replace address field of left instruction in memory by the 12 least significant bits of AC
 			validateDataAccess(reg.mar);
-			reg.mbr = POW_OF_2[20] * selectBits(reg.ac, 20, 12); // tranfer the left address field of AC to MBR for mem write. everything else is zero
+			reg.mbr = POW_OF_2[20] * selectBits(reg.ac, 0, 12); // tranfer the 12 lower bits of AC to MBR for mem write. everything else is zero
 			var addr_field = POW_OF_2[20] * selectBits(ram[reg.mar], 20, 12);
 			ram[reg.mar] += reg.mbr - addr_field; // replaces the original address field in memory with the one in MBR
 		}
@@ -370,7 +370,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	instructions[19] = {
 		name: "STOR M(X,28:39)",
 		execute: function () {
-			// replace address field of right instruction in memory by corresponding field of AC
+			// replace address field of right instruction in memory by the 12 least significant bits of AC
 			validateDataAccess(reg.mar);
 			reg.mbr = selectBits(reg.ac, 0, 12); // tranfer the right address field of AC to MBR for mem write. everything else is zero
 			var addr_field = selectBits(ram[reg.mar], 0, 12);
