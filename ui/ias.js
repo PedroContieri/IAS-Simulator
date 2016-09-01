@@ -88,7 +88,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	var validateInstructionFetch = function () {
 		if (typeof ram[reg.pc] !== "number") { // if it's not a valid (initialized) position in RAM
 			throw {
-				name: "invalidFetch",
+				name: "invalidFetchAddr", // used for proper program termination (i.e. jump to 0x400)
 				message: "Attempt to fetch an instruction at an invalid address:\n" +
 					     "0x" + reg.pc.toString(16).toUpperCase()
 			};
@@ -744,7 +744,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			reg.ctrl = "right_execute";
 		} else {
 			throw {
-				name: "invalidFetch",
+				name: "invalidFetchDuringExecute",
 				message: "Invalid attempt to fetch an instruction during an execute cycle. reg.ctrl = "+ reg.ctrl
 			};
 		}
@@ -756,7 +756,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 
 		if (reg.ctrl.indexOf("execute") === -1) { // if not an execute cycle
 			throw {
-				name: "invalidExecution",
+				name: "invalidExecutionDuringFetch",
 				message: "invalid attempt to execute an instruction during a fetch cycle"
 			};
 		}
@@ -1014,7 +1014,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		var outputreport = "# tests executed by IAS on " + (new Date()).toString() + "\n\n"; // do each test in turn
 
 		try {
-			
+
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
 			for (var i = 0; i < testObject.length; i++) { // for each test
@@ -1073,8 +1073,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 					testresults += "A total of " + correct + " out of " + testObject[i].output.length +
 					               " values matched for test " + (i+1);
 					if (correct === testObject[i].output.length) { // if all the values match
-						correcttests++;
-						testresults += "\nTEST PASSED";
+						if (ex.name === "invalidFetchAddr") { // the CPU tried to fetch an instruction from an invalid memory address. used for proper program termination
+							correcttests++;
+							testresults += "\nTEST PASSED";
+						} else { 
+							testresults += "\nTEST FAILED: INCORRECT TERMINATION" +
+							               "\nProgram should finish by jumping to an out of bounds address";
+						}
 					} else {
 						testresults += "\nTEST FAILED";
 					}
