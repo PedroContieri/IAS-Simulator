@@ -3,8 +3,10 @@ var loadMem = function(txt)
 {
   // NOTE: loadRAM already does all the text processing, removing comments, whitespace, etc.
   // only requirement is that 
-  // 1. there be whitespace between the word address and the word content(s), and
-  // 2. there be zero or 1 word per line. Formatting of the word content itself is free. The content is read as a single number.
+  // 1. there be (non line break) whitespace between the word address and the word content(s), and
+  // 2. there be zero or 1 word per line. 
+  // Formatting of the word content itself is free. The word content is read as a single (hexadecimal) number, independent of spaces
+  // Word address is also read as hex number (but no spaces allowed in the middle). range checking is performed for both
   IAS.loadRAM(txt);
   update_UI_mem_boxes();
 };
