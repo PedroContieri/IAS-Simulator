@@ -97,8 +97,8 @@ var ASSEMBLER = (function () {
 	};
 	instructions[13] = {
 		name: "JUMP M(X,0:19)", // bit convention: MSB 0
-		pattern: /^\s*JUMP\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*(?:,\s*0\s*:\s*19)?\s*\)\s*$/i
-			// capture group 1: address operand
+		pattern: /^\s*JUMP\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*(,\s*0\s*:\s*19)?\s*\)\s*$/i
+			// capture group 1: address operand. capture group 2: does it refer to left halfword explicitly?
 	};
 	instructions[14] = {
 		name: "JUMP M(X,20:39)", // bit convention: MSB 0
@@ -107,8 +107,8 @@ var ASSEMBLER = (function () {
 	};
 	instructions[15] = {
 		name: "JUMP+ M(X,0:19)", // bit convention: MSB 0
-		pattern: /^\s*JUMP\+\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*(?:,\s*0\s*:\s*19)?\s*\)\s*$/i
-			// capture group 1: address operand
+		pattern: /^\s*JUMP\+\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*(,\s*0\s*:\s*19)?\s*\)\s*$/i
+			// capture group 1: address operand. capture group 2: does it refer to left halfword explicitly?
 	};
 	instructions[16] = {
 		name: "JUMP+ M(X,20:39)", // bit convention: MSB 0
@@ -118,7 +118,7 @@ var ASSEMBLER = (function () {
 	instructions[18] = {
 		name: "STOR M(X,8:19)", // bit convention: MSB 0
 		pattern: /^\s*STOR\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*,\s*8\s*:\s*19\s*\)\s*$/i
-			// capture group 1: address operand
+			// capture group 1: address operand.
 	};
 	instructions[19] = {
 		name: "STOR M(X,28:39)", // bit convention: MSB 0
@@ -165,7 +165,7 @@ var ASSEMBLER = (function () {
 	};
 	linePatterns[SET] = {
 		name: ".set NAME,N", // gives the symbol NAME some value N (NAME must not be one of the labels, which are constant)
-		pattern: /^\s*\.set\s+([a-z_$][a-z0-9_$]+)\s*,\s*([_a-z$][_a-z$0-9]*|-?\s*(?:0x)?[a-f0-9\s]+)\s*(?:#.*)?$/i
+		pattern: /^\s*\.set\s+([a-z_$][a-z0-9_$]*)\s*,\s*([_a-z$][_a-z$0-9]*|-?\s*(?:0x)?[a-f0-9\s]+)\s*(?:#.*)?$/i
 			// capture group 1: NAME. group 2: VALUE
 	};
 	linePatterns[ALIGN] = {
@@ -175,7 +175,7 @@ var ASSEMBLER = (function () {
 	};
 	linePatterns[LABELORINSTRUCTION] = {
 		name: "[LABEL:][INSTRUCTION]", // assigns, if present, the symbol represented by LABEL the current value of the location counter; then, if present, assembles the instruction
-		pattern: /^\s*(?:([a-z_$][a-z0-9_$]+)\s*:)?\s*([^#]*)?\s*(?:#.*)?$/i
+		pattern: /^\s*(?:([a-z_$][a-z0-9_$]*)\s*:)?\s*([^#]*)?\s*(?:#.*)?$/i
 			// capture group 1: optional label identifier. group 2: optional instruction (still to be parsed)
 	};
 	// we could have 'tokenized' the input source code and then processed it, etc,
@@ -286,11 +286,11 @@ var ASSEMBLER = (function () {
 						value = variables[value];
 					}
 					else if (labels[value]) { // if the label is defined
-						value = labels[value];
+						value = Math.floor(labels[value]/WORDLENGTH);
 					}
 					else { // must be a label that's not defined yet
 						plugInAddresses[ias.locationCounter] = {
-							value: value, // value of the label will be inserted later at this address
+							name: value, // value of the label will be inserted later at this address
 							length: WORDLENGTH
 						};
 						value = 0; // value will be replaced later
@@ -370,7 +370,7 @@ var ASSEMBLER = (function () {
 							         "\nused in line " + (i+1) + " has already been defined"
 						};
 					}
-					labels[labelname] =ias.locationCounter;
+					labels[labelname] = ias.locationCounter;
 				}
 				var instructionStr = lineMatch[2];
 				if (instructionStr) { // if there is an instruction to process
@@ -383,6 +383,7 @@ var ASSEMBLER = (function () {
 							}
 						}
 					}
+					k = parseInt(k);
 					if (matchedInstruction === null) { // if it doesn't match any instruction
 						throw {
 							name: "instructionSyntaxError",
@@ -393,19 +394,28 @@ var ASSEMBLER = (function () {
 					insertInMem(ias.locationCounter, 2, k); // insert instruction opcode in mem map
 					ias.locationCounter += 2;
 					var addrfield = matchedInstruction[1];
+					var specifiedLeftOrRightVariant = matchedInstruction[2]; // for jumps and address field stores only
 					if (addrfield) { // if the instruction has an address field
 						if (identifierPattern.test(addrfield)) { // if it's an identifier
 							if (variables[addrfield]) { // if the variable is defined
 								addrfield = variables[addrfield];
 							}
 							else if (labels[addrfield]) { // if the label is defined
-								addrfield = labels[addrfield];
+								addrfield = Math.floor(labels[addrfield]/WORDLENGTH);
+								if (addrfield % WORDLENGTH !== 0 && !specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
+									// if the label is to the right, but we have an instruction that could refer to either left or right (jump, jump+), then correct it (it initially defaults to left)
+									insertInMem(ias.locationCounter-2, 2, k+1); // correct the opcode field: jump m(addr, 0:19) becomes jump m(addr, 20:39) for example
+								}
 							}
 							else { // must be a label that's not defined yet
 								plugInAddresses[ias.locationCounter] = {
-									value: addrfield, // value of the label will be inserted later at this address
+									name: addrfield, // value of the label will be inserted later at this address
 									length: ADDRLENGTH
 								};
+								if (!specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
+									// if we have an instruction that could refer to either left or right (jump, jump+), then we might have to correct it later (it initially defaults to left)
+									plugInAddresses[ias.locationCounter].checkLeftOrRightInInstruction = true; // we might have to correct the opcode field, depending on the label address. jump m(addr, 0:19) would become jump m(addr, 20:39) for example
+								}
 								addrfield = 0; // the instruction will be stitched up at the end
 							}
 						}
@@ -430,27 +440,38 @@ var ASSEMBLER = (function () {
 		}
 
 		// plug in missing addresses from instructions and data
-		for (var _address in plugInAddresses) {
-			if (plugInAddresses.hasOwnProperty(_address)) { // for each missing sequence of values
-				value = labels[plugInAddresses[_address].value];
+		for (var addr in plugInAddresses) {
+			if (plugInAddresses.hasOwnProperty(addr)) { // for each missing sequence of values
+				addr = parseInt(addr);
+				var plugInObject = plugInAddresses[addr];
+				value = labels[plugInObject.name];
 				if (value === undefined) { // if the label was never defined
 					throw {
 						name: "undefinedLabel",
-						message: "the label " + plugInAddresses[_address].value + " was used but never defined"
+						message: "the label " + plugInObject.name + " was used but never defined"
 					};
 				}
-				var length = plugInAddresses[_address].length;
-				if (length <= WORDLENGTH) {
-					insertInMem(_address, length, value);
-				}
-				else { // must be a .wfill
-					for (ias.locationCounter = _address; ias.locationCounter < _address + WORDLENGTH*length; ias.locationCounter += WORDLENGTH) {
-						insertInMem(ias.locationCounter, WORDLENGTH, value);
+				if (plugInObject.checkLeftOrRightInInstruction) { // if we might have to correct the opcode of jump
+					var previousInstructionOpcode = parseInt(mem[value-2]+mem[value-1], 16);
+					if (value % WORDLENGTH !== 0) { // then we have to correct the instruction to make it jump to the right (it was left by default)
+						insertInMem(addr-2, 2, previousInstructionOpcode+1); // for example, jump m(addr, 0:19) becomes jump m(addr, 20:39)
 					}
 				}
-				if (ias.locationCounter % WORDLENGTH !== 0 && mem[ias.locationCounter] === undefined) {
+				var length = plugInObject.length;
+				if (length <= WORDLENGTH) {
+					insertInMem(addr, length, Math.floor(value/WORDLENGTH));
+					addr += length;
+				}
+				else { // has to be a .wfill
+					while (length > 0) {
+						insertInMem(addr, WORDLENGTH, value);
+						addr += WORDLENGTH;
+						length -= WORDLENGTH;
+					}
+				}
+				if (addr % WORDLENGTH !== 0 && mem[addr] === undefined) {
 					// if we are not word aligned and the second part of the word is empty, we need to make sure there is stuff there
-					insertInMem(ias.locationCounter, WORDLENGTH/2, 0); // fill with zero
+					insertInMem(addr, WORDLENGTH/2, 0); // fill with zero
 				}				
 
 			}
@@ -462,7 +483,7 @@ var ASSEMBLER = (function () {
 			if (mem.hasOwnProperty(i) && i % WORDLENGTH == 0) { // for each word we filled in
 				// remember, our memory map may be sparse
 				i = parseInt(i, 10); // it considered the index a string for concatenation down below. javascript never ceases to amaze me
-				var addr = (i/WORDLENGTH).toString(16);
+				addr = (i/WORDLENGTH).toString(16);
 				var line = leftPadWithChar(addr, "0", (ADDRLENGTH - addr.length)); // left pad the address field with zeroes
 				line += "\t\t";
 
