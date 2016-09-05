@@ -1,3 +1,5 @@
+// Copyright (c) 2016 Giuliano Sider
+
 var IAS = (function () { // this module encapsulates the IAS machine and the associated RAM
 /* the module provides the following services via its API:
 
@@ -76,6 +78,13 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		return result + str;
 	}
 
+	var leftJustifyString = function (str, minwidth, padchar) {
+		if (str.length < minwidth) {
+			str = leftPadWithChar(str, padchar || " ", minwidth - str.length);
+		}
+		return str;
+	}
+
 	var eliminateWhitespace = function (str) {
 		var whitespace = /[\s]/g; // g flag for global replacement of whitespace chars
 		return str.replace(whitespace, ""); // whitespace -> (empty string)
@@ -141,7 +150,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	};
 
 
-	var blankinstruction = "(NO INSTRUCTION)    "; // 20 chars wide
+	var blankinstruction = "NO INSTRUCTION    "; // 18 chars wide
 	// all known IAS instructions:
 	var instructions = []
 	instructions[1] = {
@@ -907,15 +916,43 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	// dumps CPU information
 	var dumpCPU = function () {
 		reg.ir = reg.ir * POW_OF_2[12]; // put IR's "opcode field" in place so we can read it
+		var auxfieldwidth = 18;
+		var ir_rightopcodehex = leftJustifyString(getCPU("IR", "rightopcodehex"), 2, "0");
+		var ir_rightopcodetext = leftJustifyString(getCPU("IR", "rightopcodetext"), auxfieldwidth, " ");
+		var mar_rightaddrhex = leftJustifyString(getCPU("MAR", "rightaddrhex"), 3, "0");
+		var mar_rightaddr = leftJustifyString(getCPU("MAR", "rightaddr"), auxfieldwidth, " ");
+		var pc_rightaddrhex = leftJustifyString(getCPU("PC", "rightaddrhex"), 3, "0");
+		var pc_rightaddr = leftJustifyString(getCPU("PC", "rightaddr"), auxfieldwidth, " ");
+		var ibr_rightopcodehex = leftJustifyString(getCPU("IBR", "rightopcodehex"), 2, "0");
+		var ibr_rightaddrhex = leftJustifyString(getCPU("IBR", "rightaddrhex"), 3, "0");
+		var ibr_rightinstructiontext = leftJustifyString(getCPU("IBR", "rightinstructiontext"), 22, " ");
+
+		var mbr_leftopcodehex = leftJustifyString(getCPU("MBR", "leftopcodehex"), 2, "0");
+		var mbr_leftaddrhex = leftJustifyString(getCPU("MBR", "leftaddrhex"), 3, "0");
+		var mbr_rightopcodehex = leftJustifyString(getCPU("MBR", "rightopcodehex"), 2, "0");
+		var mbr_rightaddrhex = leftJustifyString(getCPU("MBR", "rightaddrhex"), 3, "0");
+		var mbr_wordvalue = leftJustifyString(getCPU("MBR", "wordvalue"), auxfieldwidth, " ");
+		var ac_leftopcodehex = leftJustifyString(getCPU("AC", "leftopcodehex"), 2, "0");
+		var ac_leftaddrhex = leftJustifyString(getCPU("AC", "leftaddrhex"), 3, "0");
+		var ac_rightopcodehex = leftJustifyString(getCPU("AC", "rightopcodehex"), 2, "0");
+		var ac_rightaddrhex = leftJustifyString(getCPU("AC", "rightaddrhex"), 3, "0");
+		var ac_wordvalue = leftJustifyString(getCPU("AC", "wordvalue"), auxfieldwidth, " ");
+		var mq_leftopcodehex = leftJustifyString(getCPU("MQ", "leftopcodehex"), 2, "0");
+		var mq_leftaddrhex = leftJustifyString(getCPU("MQ", "leftaddrhex"), 3, "0");
+		var mq_rightopcodehex = leftJustifyString(getCPU("MQ", "rightopcodehex"), 2, "0");
+		var mq_rightaddrhex = leftJustifyString(getCPU("MQ", "rightaddrhex"), 3, "0");
+		var mq_wordvalue = leftJustifyString(getCPU("MQ", "wordvalue"), auxfieldwidth, " ");
+
 		var returnstring = "IAS:\n" +
-			   "CTRL: " + reg.ctrl + "\n" +
-			   "IR: " + "0x" + getCPU("IR", "rightopcodehex") + "\t" + getCPU("IR", "rightopcode") + "\t" + getCPU("IR", "rightopcodetext") + "\n" +
-			   "MAR: " + "0x" + getCPU("MAR", "rightaddrhex") + "\t" + getCPU("MAR", "rightaddr") + "\n" +
-			   "PC: " + "0x" + getCPU("PC", "rightaddrhex") + "\t" + getCPU("PC", "rightaddr") + "\n" +
-			   "IBR: " + "0x" + getCPU("IBR", "rightopcodehex") + " " + getCPU("IBR", "rightaddrhex") + "\t" + getCPU("IBR", "rightinstructiontext") + "\n" +
-			   "MBR: " + "0x" + getCPU("MBR", "leftopcodehex") + " " + getCPU("MBR", "leftaddrhex") + "\t" + getCPU("MBR", "leftinstructiontext") + "\t\t\t" + getCPU("MBR", "rightopcodehex") + " " + getCPU("MBR", "rightaddrhex") + "\t" + getCPU("MBR", "rightinstructiontext") + "\n" +
-			   "AC: " + "0x" + getCPU("AC", "wordvaluehex") + "\t\t\t" + getCPU("AC", "wordvalue") + "\n" +
-			   "MQ: " + "0x" + getCPU("MQ", "wordvaluehex") + "\t\t\t" + getCPU("MQ", "wordvalue") + "\n";
+		                   "CTRL: " + reg.ctrl + "\n" +
+		                   "IR  : " + "          \t      " + "0x" + ir_rightopcodehex + "\t\t" + ir_rightopcodetext + "\n" +
+		                   "MAR : " + "          \t     "  + "0x" + mar_rightaddrhex  + "\t\t" + mar_rightaddr      + "\n" +
+		                   "PC  : " + "          \t     "  + "0x" + pc_rightaddrhex  + "\t\t"  + pc_rightaddr       + "\n" +
+		                   "IBR : " + "          \t" + "0x" + ibr_rightopcodehex + " 0x" + ibr_rightaddrhex + "\t\t" + ibr_rightinstructiontext + "\n" +
+		                   "MBR : " + "0x" + mbr_leftopcodehex + " 0x" + mbr_leftaddrhex + "\t0x" + mbr_rightopcodehex + " 0x" + mbr_rightaddrhex + "\t\t" + mbr_wordvalue + "\n" + 
+		                   "AC  : " + "0x" + ac_leftopcodehex  + " 0x" + ac_leftaddrhex  + "\t0x" + ac_rightopcodehex  + " 0x" + ac_rightaddrhex  + "\t\t" + ac_wordvalue  + "\n" + 
+		                   "MQ  : " + "0x" + mq_leftopcodehex  + " 0x" + mq_leftaddrhex  + "\t0x" + mq_rightopcodehex  + " 0x" + mq_rightaddrhex  + "\t\t" + mq_wordvalue  + "\n";
+
 		reg.ir = Math.floor(reg.ir / POW_OF_2[12]); // undo IR shift done above
 		return returnstring;	   
 	};

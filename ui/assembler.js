@@ -1,3 +1,5 @@
+// Copyright (c) 2016 Giuliano Sider
+
 var ASSEMBLER = (function () {
 
 	// utilities // some code (up to the end of the instructions array) was directly reused from the IAS module
@@ -117,8 +119,8 @@ var ASSEMBLER = (function () {
 	};
 	instructions[18] = {
 		name: "STOR M(X,8:19)", // bit convention: MSB 0
-		pattern: /^\s*STOR\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*,\s*8\s*:\s*19\s*\)\s*$/i
-			// capture group 1: address operand.
+		pattern: /^\s*STOR\s+M\s*\(\s*(0x[0-9a-f]+|[_a-z$][_a-z$0-9]*)\s*,\s*(8\s*:\s*19)?\s*\)\s*$/i
+			// capture group 1: address operand. capture group 2: does it refer to left halfword explicitly?
 	};
 	instructions[19] = {
 		name: "STOR M(X,28:39)", // bit convention: MSB 0
@@ -401,8 +403,8 @@ var ASSEMBLER = (function () {
 								addrfield = variables[addrfield];
 							}
 							else if (labels[addrfield]) { // if the label is defined
-								if (labels[addrfield] % WORDLENGTH !== 0 && !specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
-									// if the label is to the right, but we have an instruction that could refer to either left or right (jump, jump+), then correct it (it initially defaults to left)
+								if (labels[addrfield] % WORDLENGTH !== 0 && !specifiedLeftOrRightVariant && (k === 13 || k === 15 || k === 18)) {
+									// if the label is to the right, but we have an instruction that could refer to either left or right (jump, jump+, address field store), then correct it (it initially defaults to left)
 									insertInMem(ias.locationCounter-2, 2, k+1); // correct the opcode field: jump m(addr, 0:19) becomes jump m(addr, 20:39) for example
 								}
 								addrfield = Math.floor(labels[addrfield]/WORDLENGTH);
@@ -412,8 +414,8 @@ var ASSEMBLER = (function () {
 									name: addrfield, // value of the label will be inserted later at this address
 									length: ADDRLENGTH
 								};
-								if (!specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
-									// if we have an instruction that could refer to either left or right (jump, jump+), then we might have to correct it later (it initially defaults to left)
+								if (!specifiedLeftOrRightVariant && (k === 13 || k === 15 || k === 18)) {
+									// if we have an instruction that could refer to either left or right (jump, jump+, address field store), then we might have to correct it later (it initially defaults to left)
 									plugInAddresses[ias.locationCounter].checkLeftOrRightInInstruction = true; // we might have to correct the opcode field, depending on the label address. jump m(addr, 0:19) would become jump m(addr, 20:39) for example
 								}
 								addrfield = 0; // the instruction will be stitched up at the end
@@ -452,7 +454,7 @@ var ASSEMBLER = (function () {
 					};
 				}
 				if (plugInObject.checkLeftOrRightInInstruction) { // if we might have to correct the opcode of jump
-					var previousInstructionOpcode = parseInt(mem[value-2]+mem[value-1], 16);
+					var previousInstructionOpcode = parseInt(mem[addr-2]+mem[addr-1], 16);
 					if (value % WORDLENGTH !== 0) { // then we have to correct the instruction to make it jump to the right (it was left by default)
 						insertInMem(addr-2, 2, previousInstructionOpcode+1); // for example, jump m(addr, 0:19) becomes jump m(addr, 20:39)
 					}
