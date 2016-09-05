@@ -913,9 +913,9 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			   "MAR: " + "0x" + getCPU("MAR", "rightaddrhex") + "\t" + getCPU("MAR", "rightaddr") + "\n" +
 			   "PC: " + "0x" + getCPU("PC", "rightaddrhex") + "\t" + getCPU("PC", "rightaddr") + "\n" +
 			   "IBR: " + "0x" + getCPU("IBR", "rightopcodehex") + " " + getCPU("IBR", "rightaddrhex") + "\t" + getCPU("IBR", "rightinstructiontext") + "\n" +
-			   "MBR: " + "0x" + getCPU("MBR", "leftopcodehex") + " " + getCPU("MBR", "leftaddrhex") + " " + getCPU("MBR", "leftinstructiontext") + "\t" + getCPU("MBR", "rightopcodehex") + " " + getCPU("MBR", "rightaddrhex") + " " + getCPU("MBR", "rightinstructiontext") + "\n" +
-			   "AC: " + "0x" + getCPU("AC", "wordvaluehex") + "\t" + getCPU("AC", "wordvalue") + "\n" +
-			   "MQ: " + "0x" + getCPU("MQ", "wordvaluehex") + "\t" + getCPU("MQ", "wordvalue") + "\n";
+			   "MBR: " + "0x" + getCPU("MBR", "leftopcodehex") + " " + getCPU("MBR", "leftaddrhex") + "\t" + getCPU("MBR", "leftinstructiontext") + "\t\t\t" + getCPU("MBR", "rightopcodehex") + " " + getCPU("MBR", "rightaddrhex") + "\t" + getCPU("MBR", "rightinstructiontext") + "\n" +
+			   "AC: " + "0x" + getCPU("AC", "wordvaluehex") + "\t\t\t" + getCPU("AC", "wordvalue") + "\n" +
+			   "MQ: " + "0x" + getCPU("MQ", "wordvaluehex") + "\t\t\t" + getCPU("MQ", "wordvalue") + "\n";
 		reg.ir = Math.floor(reg.ir / POW_OF_2[12]); // undo IR shift done above
 		return returnstring;	   
 	};
@@ -1012,12 +1012,14 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	   // maxtime is an optional argument specifying the timeout interval for each test. default: 10 seconds
 	var testCases = function (memMap, testObject, maxtime) {
 		var outputreport = "# tests executed by IAS on " + (new Date()).toString() + "\n\n"; // do each test in turn
-
+		
+		testObject = testObject.replace(/\/\/.*$/gm, "\n"); // strip out '//' comments. don't use it inside of a string!
+		
 		try {
-
+			var i = 0;
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
-			for (var i = 0; i < testObject.length; i++) { // for each test
+			for (i = 0; i < testObject.length; i++) { // for each test
 				var testresults = "Beginning test " + (i+1) + "\n";
 				/*var testmap = memMap;
 				for (var j = 0; j < testObject[i].input.length; j++) { // for each input line

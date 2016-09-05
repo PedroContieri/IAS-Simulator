@@ -370,7 +370,7 @@ var ASSEMBLER = (function () {
 							         "\nused in line " + (i+1) + " has already been defined"
 						};
 					}
-					labels[labelname] = ias.locationCounter;
+					labels[labelname] = ias.locationCounter; // must later be converted to an actual address
 				}
 				var instructionStr = lineMatch[2];
 				if (instructionStr) { // if there is an instruction to process
@@ -401,11 +401,11 @@ var ASSEMBLER = (function () {
 								addrfield = variables[addrfield];
 							}
 							else if (labels[addrfield]) { // if the label is defined
-								addrfield = Math.floor(labels[addrfield]/WORDLENGTH);
-								if (addrfield % WORDLENGTH !== 0 && !specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
+								if (labels[addrfield] % WORDLENGTH !== 0 && !specifiedLeftOrRightVariant && (k === 13 || k === 15)) {
 									// if the label is to the right, but we have an instruction that could refer to either left or right (jump, jump+), then correct it (it initially defaults to left)
 									insertInMem(ias.locationCounter-2, 2, k+1); // correct the opcode field: jump m(addr, 0:19) becomes jump m(addr, 20:39) for example
 								}
+								addrfield = Math.floor(labels[addrfield]/WORDLENGTH);
 							}
 							else { // must be a label that's not defined yet
 								plugInAddresses[ias.locationCounter] = {
@@ -459,12 +459,12 @@ var ASSEMBLER = (function () {
 				}
 				var length = plugInObject.length;
 				if (length <= WORDLENGTH) {
-					insertInMem(addr, length, Math.floor(value/WORDLENGTH));
+					insertInMem(addr, length, Math.floor(value/WORDLENGTH)); // insert value of forward-referenced label
 					addr += length;
 				}
 				else { // has to be a .wfill
 					while (length > 0) {
-						insertInMem(addr, WORDLENGTH, value);
+						insertInMem(addr, WORDLENGTH, Math.floor(value/WORDLENGTH)); // insert value of forward-referenced label
 						addr += WORDLENGTH;
 						length -= WORDLENGTH;
 					}
