@@ -267,7 +267,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 			reg.mq += POW_OF_2[20] * (selectBits(tmp,  0, 20) + selectBits(tmp2,  0, 20)); // lower half of cross terms goes into least significant register
 			// can we really get a carry in the lower register? i'm putting this just in case:
 			if (reg.mq >= POW_OF_2[40]) { // if we get a carry in MQ
-				console.log("we got a carry of 0x" + Math.floor(reg.mq / POW_OF_2[40]).toString(16).toUpperCase() + " during a MUL M(X) op"); // debug
+				//console.log("we got a carry of 0x" + Math.floor(reg.mq / POW_OF_2[40]).toString(16).toUpperCase() + " during a MUL M(X) op"); // debug
 				reg.ac += Math.floor(reg.mq / POW_OF_2[40]); // bits that carried go to the upper register
 				reg.mq = reg.mq % POW_OF_2[40];
 			}
@@ -819,7 +819,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		if (register === "ir" || register === "ibr" || register === "pc" || register === "mar") {
 			prop = prop.replace("left", "right"); // user can use 'left' in this case, even though there is only one side
 		}
-	    console.log("prop = "+prop);
+	    //console.log("prop = "+prop);
 		var attrInfo = validAttributes[prop];
 		if (reg[register] === undefined) { // if there is no such register
 			throw {
@@ -835,7 +835,7 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		}
 		var word = reg[register];
 		var lsb = register === "ir" ? 0 : attrInfo.lsb; // IR's opcode field actually starts at bit 0
-   	    console.log("Word ("+word+") lsb("+lsb+") numbits("+attrInfo.numbits);
+   	    //console.log("Word ("+word+") lsb("+lsb+") numbits("+attrInfo.numbits);
 		return attrInfo.convertFieldToVal(selectBits(word, lsb, attrInfo.numbits)); // return the desired property
 	};
 
@@ -990,11 +990,12 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		
 		// represents a line with data/instructions: a hex address followed by hex numbers. 
 		// whitespace only mandatory for separating the address and the memory value. comments optional. numbers optional.
-		var linepattern = /^\s*(?:([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*))?\s*(?:#.*)?$/i; 
+		var linepattern = /^\s*(?:([0-9a-f]+)\s+([0-9a-f][0-9a-f\s]*))?\s*$/i; 
 		
 		var whitespace = /\s/g; // represents a single whitespace
 		var whitespaceonly = /^\s*$/; // represents a whitespace only string (possibly empty)
 		for (var i = 0; i < lines.length; i++) {
+			lines[i] = lines[i].replace(/#.*/g, "");
 			var m = lines[i].match(linepattern); // capture 1: line addr. capture 2: number (with possible whitespace interspersed)
 			if (m === null) { // if the line does match our pattern
 				throw {
@@ -1054,6 +1055,8 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 		
 		try {
 			var i = 0;
+			var timeout;
+			var test_timed_out = false;
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
 			for (i = 0; i < testObject.length; i++) { // for each test
@@ -1073,22 +1076,29 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 						IAS.setRAM(parseInt(processinput.position), "wordvalue", parseInt(processinput.value));
 					}
 				}
-				var timeout;
-				var testtimedout = false;
+				test_timed_out = false;
 				if (maxtime) { // if the user specifies a timeout
-					timeout = setTimeout(function(){testtimedout = true}, maxtime * 1000);
+					timeout = setInterval(
+						function () {
+							test_timed_out = true;
+						},
+						maxtime * 1000
+					);
 				}
 				try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
-					while (!testtimedout) { // execute until timeout the program throws the CPU into an invalid state
+					while (1) { // execute until timeout the program throws the CPU into an invalid state
 						IAS.fetch();
 						IAS.execute();
+						if (test_timed_out) {
+							throw {name: "timeout", message: "time is up for this test"};
+						}
 					}
 				} catch (ex) { // program is done
-					if (maxtime && !testtimedout) { // cancel the timeout
-						clearTimeout(timeout);
+					if (maxtime && !test_timed_out) { // cancel the timeout
+						clearInterval(timeout);
 					}
-					if (testtimedout) {
-						testresults += "\nIAS execution halted after a specified timeout of " + (maxtime*1000) + " seconds\n";
+					if (test_timed_out) {
+						testresults += "\nIAS execution halted after a specified timeout of " + (maxtime) + " seconds\n";
 					}
 					else { // program halted via CPU exception
 						testresults += "\nIAS execution terminated after firing the following exception:\n"
