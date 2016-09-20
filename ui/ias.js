@@ -1047,16 +1047,14 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 	   // each of which represents a memory map line to load onto IAS. the other attribute is "output",
 	   // an array of objects with 'where' (ram or reg), 'position' (register name or memory address),
 	   // and 'value' (correct value for the test)
-	   // maxtime is an optional argument specifying the timeout interval for each test. default: 10 seconds
-	var testCases = function (memMap, testObject, maxtime) {
+	   // maxcycles is an optional argument specifying the timeout interval for each test, in IAS execution cycles. if not specified, there is no limit
+	var testCases = function (memMap, testObject, maxcycles) {
 		var outputreport = "# tests executed by IAS on " + (new Date()).toString() + "\n\n"; // do each test in turn
 		
 		testObject = testObject.replace(/\/\/.*$/gm, "\n"); // strip out '//' comments. don't use it inside of a string!
 		
 		try {
 			var i = 0;
-			var timeout;
-			var test_timed_out = false;
 			testObject = JSON.parse(testObject);
 			var correcttests = 0;
 			for (i = 0; i < testObject.length; i++) { // for each test
@@ -1076,29 +1074,18 @@ valid memory/register attributes for getRAM, setRAM, getCPU, setCPU orders. case
 						IAS.setRAM(parseInt(processinput.position), "wordvalue", parseInt(processinput.value));
 					}
 				}
-				test_timed_out = false;
-				if (maxtime) { // if the user specifies a timeout
-					timeout = setInterval(
-						function () {
-							test_timed_out = true;
-						},
-						maxtime * 1000
-					);
-				}
 				try { // now run the program until an exception fires (for example, invalid instruction or address: jmp m(0xFFFFF) # halts machine)
+					var cyclesleft = maxcycles;
 					while (1) { // execute until timeout the program throws the CPU into an invalid state
 						IAS.fetch();
 						IAS.execute();
-						if (test_timed_out) {
+						if (maxcycles && (--cyclesleft) === 0) {
 							throw {name: "timeout", message: "time is up for this test"};
 						}
 					}
 				} catch (ex) { // program is done
-					if (maxtime && !test_timed_out) { // cancel the timeout
-						clearInterval(timeout);
-					}
-					if (test_timed_out) {
-						testresults += "\nIAS execution halted after a specified timeout of " + (maxtime) + " seconds\n";
+					if (ex.name === "timeout") {
+						testresults += "\nIAS execution halted after a specified timeout of " + maxcycles + " IAS instruction cycles\n";
 					}
 					else { // program halted via CPU exception
 						testresults += "\nIAS execution terminated after firing the following exception:\n"
