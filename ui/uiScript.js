@@ -7,7 +7,13 @@ var loadMem = function(txt)
   // 2. there be zero or 1 word per line. 
   // Formatting of the word content itself is free. The word content is read as a single (hexadecimal) number, independent of spaces
   // Word address is also read as hex number (but no spaces allowed in the middle). range checking is performed for both
-  IAS.loadRAM(txt);
+  try {
+    IAS.loadRAM(txt);
+  } catch (exception) {
+    alert("Error loading IAS memory:" + "\n" +
+          "exception name: " + exception.name + "\n" +
+          "exception message: " + exception.message);
+  }
   update_UI_mem_boxes();
 };
 

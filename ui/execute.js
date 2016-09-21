@@ -44,10 +44,10 @@ var next = function()
   } 
   catch(exception) {
     end = true;
+    window.clearInterval(allRun); // should be done before the alert. alert is a blocking function!!
     alert("PROGRAM ABORTED" + "\n" +
           "exception name: " + exception.name + "\n" +
           "exception message: " + exception.message);
-    window.clearInterval(allRun);
     return;
   }
 };
@@ -79,14 +79,8 @@ var reboot = function()
 {
   IAS.zeroAllRegisters();
   resetAll();
-  cleanMemoryMap();
+  IAS.zeroAllRAM();
   return;
-}
-
-/* Set all memory as zero */
-var cleanMemoryMap = function(){
-	// IAS provides a shortcut
-	IAS.zeroAllRAM();
 }
 
 /* Validate numeric entry box */
